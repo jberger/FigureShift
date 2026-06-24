@@ -1,11 +1,21 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, ipcMain } from 'electron';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
+import { attemptLogin } from './main/twdbAuth';
+import { resizeSmokeTest } from './main/resizeSmokeTest';
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
   app.quit();
 }
+
+// IPC handlers bridging the renderer to twdb-client (main/Node process).
+ipcMain.handle(
+  'twdb:login',
+  (_event, { username, password }: { username: string; password: string }) =>
+    attemptLogin(username, password),
+);
+ipcMain.handle('twdb:resizeSmokeTest', () => resizeSmokeTest());
 
 const createWindow = () => {
   // Create the browser window.
