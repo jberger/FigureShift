@@ -33,6 +33,17 @@ The 1–2-machine user is supported but is not the primary optimization target.
 - **Electron** app; `twdb-client` runs in the **main (Node) process** (renderer drives the UI, IPC to
   main for library calls + filesystem). Single-user-local: the operator uses their own TWDB login,
   which never leaves their machine.
+- **Why native, not a PWA:** the decisive constraint is talking to TWDB. `twdb-client` is a Node HTTP
+  client (cookie jar, form POSTs, HTML-response parsing) — a browser PWA's cross-origin `fetch` to
+  typewriterdatabase.com is blocked by CORS (TWDB sends no `Access-Control-Allow-Origin`; responses are
+  unreadable). The only PWA workaround is a hosted proxy, which would route every user's TWDB password
+  through our server — breaking the creds-stay-local privacy goal. A PWA also can't use the OS keychain.
+  So native it is. (A browser *extension* could preserve privacy via host-permission CORS bypass, but is
+  Chromium-only and abandons the folder-of-YAML model — kept in reserve, not chosen.)
+- **On the $99 Apple fee:** deliberately **deferred**. The fee buys only macOS notarization, which the
+  packaging slice gates behind env vars (ad-hoc/unsigned by default). We ship free to early adopters
+  (one-time Gatekeeper right-click→Open) and flip on notarization as a config-only change once the
+  audience validates the app.
 - **The local filesystem is the source of truth and the state store** — no hidden database. Everything
   the app knows lives in human-readable YAML inside the user's photo tree (+ a tiny app-config/keychain
   entry for the remembered session).
@@ -105,10 +116,22 @@ share one implementation:
 
 ## Packaging
 
-Electron + **`electron-builder`**: Win/Mac/Linux installers, `sharp` rebuilt for Electron, code-signing
-+ macOS notarization, (optionally) auto-update later. **A packaging/signing spike is the first slice** —
-prove a signed, installable, `twdb-client`-logging build before building features (de-risks the part
-that historically bites).
+**Electron Forge** (Electron's officially-recommended tooling) with the **Vite + TypeScript** template,
+React renderer. Forge handles Win/Mac/Linux installers, native-module unpacking for `sharp`
+(`auto-unpack-natives`), and code-signing + macOS notarization via its built-in `osxSign`/`osxNotarize`
+config; (optionally) auto-update later. (The earlier `electron-builder` note was a placeholder; Forge
+chosen for stock tooling + first-class docs. Forge can delegate to electron-builder's maker if ever
+needed.)
+
+**Signing posture:** the spike wires the full signing path but **signs ad-hoc locally** and **gates
+macOS notarization behind env vars** (Apple Developer ID + notarytool credentials), so enabling real
+notarized distribution is a config-only flip once a Developer ID exists. This matters for the audience:
+an unsigned/un-notarized download trips Gatekeeper, which non-technical users won't get past — so a real
+Developer ID + notarization is required for shipping (not for the spike).
+
+**A packaging/signing spike is the first slice** — prove a (locally-signed) installable,
+`twdb-client`-logging build, with `sharp` surviving the packaged asar, before building features
+(de-risks the part that historically bites).
 
 ## Testing
 
