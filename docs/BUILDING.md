@@ -56,3 +56,24 @@ loading, asar integrity) is intentionally omitted for now: flipping fuses rewrit
 the signed Electron binary and breaks the ad-hoc signature on Apple Silicon
 ("Code Signature Invalid" SIGKILL). Re-add it together with the Developer ID
 signing + notarization flow, which seals fuses and signature consistently.
+
+## Windows (future — not yet built/verified)
+
+The macOS signing pain (ad-hoc signing, deep re-sign, fuses breaking the
+signature) is **Apple-Silicon-specific** and does **not** apply to Windows:
+
+- **Unsigned Windows apps run.** There's no equivalent of Apple Silicon's
+  SIGKILL-on-invalid-signature, so the whole ad-hoc/re-sign/fuses dance is moot.
+  The FusesPlugin hardening could even stay enabled for Windows.
+- **SmartScreen** shows a click-through "Windows protected your PC" warning for
+  unsigned / low-reputation installers — softer than macOS Gatekeeper. Early
+  adopters can choose "More info → Run anyway". Posture: ship unsigned first,
+  defer signing (same as macOS).
+- **Authenticode signing (to remove SmartScreen)** is the cost/logistics part:
+  since the 2023–24 CA/Browser Forum rules, all code-signing keys (OV *and* EV)
+  must live on a hardware token or HSM. Cheapest modern path is **Azure Trusted
+  Signing (~$10/mo)**; alternatives are an OV cert + token (reputation builds
+  slowly) or EV (pricier, faster reputation).
+- **Carries over from above:** the Node 24.16.0 `extract-zip` bug is OS-agnostic
+  (build on 24.15.0 for Windows too); and cross-building Windows from macOS needs
+  Wine/Mono for the Squirrel maker, so a Windows CI runner is cleaner.
