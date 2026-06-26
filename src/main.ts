@@ -4,7 +4,7 @@ import started from 'electron-squirrel-startup';
 import { TwdbClient } from '@joelberger/twdb-client';
 import { attemptLogin } from './main/twdbAuth';
 import { resizeSmokeTest } from './main/resizeSmokeTest';
-import { getBrandNames } from './main/brands';
+import { getBrands, getCreateModels } from './main/brands';
 import { scanLibrary } from './main/scan';
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
@@ -33,8 +33,15 @@ ipcMain.handle('library:pickRoot', async () => {
   return r.canceled ? null : r.filePaths[0];
 });
 ipcMain.handle('library:scan', async (_event, root: string) => {
-  const brandNames = client ? await getBrandNames(client) : [];
-  return scanLibrary(root, brandNames);
+  if (!client) return scanLibrary(root, [], async () => []);
+  const c = client;
+  const brands = await getBrands(c);
+  const makeNames = brands.map((b) => b.name);
+  const getModels = async (make: string): Promise<string[]> => {
+    const brand = brands.find((b) => b.name === make);
+    return brand ? getCreateModels(c, brand.id) : [];
+  };
+  return scanLibrary(root, makeNames, getModels);
 });
 
 const createWindow = () => {

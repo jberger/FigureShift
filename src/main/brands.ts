@@ -1,11 +1,20 @@
-import { TwdbClient } from '@joelberger/twdb-client';
+import { TwdbClient, type Brand } from '@joelberger/twdb-client';
 
-let cache: string[] | null = null;
+let brandCache: Brand[] | null = null;
+const modelCache = new Map<string, string[]>(); // brandId -> create-form model names
 
-// Brand names for path inference. Cached per session (be a good citizen: fetch once).
-export async function getBrandNames(client: TwdbClient): Promise<string[]> {
-  if (cache) return cache;
-  const brands = await client.listBrands();
-  cache = brands.map((b) => b.name);
-  return cache;
+// TWDB brands for make inference. Cached per session (be a good citizen: fetch once).
+export async function getBrands(client: TwdbClient): Promise<Brand[]> {
+  if (!brandCache) brandCache = await client.listBrands();
+  return brandCache;
+}
+
+// A brand's model names (create-form). Cached per brand id so a big library scan stays polite.
+export async function getCreateModels(client: TwdbClient, brandId: string): Promise<string[]> {
+  let models = modelCache.get(brandId);
+  if (!models) {
+    models = await client.listCreateModels(brandId);
+    modelCache.set(brandId, models);
+  }
+  return models;
 }
