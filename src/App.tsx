@@ -5,15 +5,34 @@ declare global {
     figureshift: {
       login: (username: string, password: string) => Promise<{ ok: boolean; message?: string }>;
       resizeSmokeTest: () => Promise<{ ok: boolean; bytes: number; contentType: string; message?: string }>;
+      pickRoot: () => Promise<string | null>;
+      scan: (root: string) => Promise<
+        Array<{
+          relPath: string;
+          status: 'new' | 'onTwdb';
+          machine: { make?: string; model?: string; year?: string; photos: { file: string }[] };
+        }>
+      >;
     };
   }
 }
+
+type Scanned = Awaited<ReturnType<Window['figureshift']['scan']>>;
 
 export function App() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [status, setStatus] = useState('');
   const [smoke, setSmoke] = useState('');
+  const [root, setRoot] = useState('');
+  const [machines, setMachines] = useState<Scanned>([]);
+
+  async function onPick() {
+    const picked = await window.figureshift.pickRoot();
+    if (!picked) return;
+    setRoot(picked);
+    setMachines(await window.figureshift.scan(picked));
+  }
 
   async function onLogin(e: FormEvent) {
     e.preventDefault();
@@ -33,7 +52,7 @@ export function App() {
   }
 
   return (
-    <main style={{ fontFamily: 'system-ui, sans-serif', padding: 24, maxWidth: 360 }}>
+    <main style={{ fontFamily: 'system-ui, sans-serif', padding: 24, maxWidth: 560 }}>
       <h1>FigureShift</h1>
       <form onSubmit={onLogin} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         <input
@@ -53,6 +72,21 @@ export function App() {
       <hr />
       <button onClick={onSmoke}>Run sharp smoke test</button>
       <p>{smoke}</p>
+      <hr />
+      <button onClick={onPick}>Pick library folder…</button>
+      {root && (
+        <p>
+          {machines.length} machine(s) in {root}
+        </p>
+      )}
+      <ul>
+        {machines.map((m) => (
+          <li key={m.relPath}>
+            <strong>{m.relPath}</strong> — {m.machine.make ?? '?'} {m.machine.model ?? ''}{' '}
+            {m.machine.year ?? ''} [{m.status}] · {m.machine.photos.length} photo(s)
+          </li>
+        ))}
+      </ul>
     </main>
   );
 }

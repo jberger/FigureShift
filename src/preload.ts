@@ -6,4 +6,6 @@ contextBridge.exposeInMainWorld('figureshift', {
   login: (username: string, password: string) =>
     ipcRenderer.invoke('twdb:login', { username, password }),
   resizeSmokeTest: () => ipcRenderer.invoke('twdb:resizeSmokeTest'),
+  pickRoot: () => ipcRenderer.invoke('library:pickRoot'),
+  scan: (root: string) => ipcRenderer.invoke('library:scan', root),
 });

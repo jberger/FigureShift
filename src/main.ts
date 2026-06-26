@@ -1,21 +1,41 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain } from 'electron';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
+import { TwdbClient } from '@joelberger/twdb-client';
 import { attemptLogin } from './main/twdbAuth';
 import { resizeSmokeTest } from './main/resizeSmokeTest';
+import { getBrandNames } from './main/brands';
+import { scanLibrary } from './main/scan';
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
   app.quit();
 }
 
+// The authenticated client is kept after a successful login so scanning can
+// fetch the brand list for path inference.
+let client: TwdbClient | null = null;
+
 // IPC handlers bridging the renderer to twdb-client (main/Node process).
 ipcMain.handle(
   'twdb:login',
-  (_event, { username, password }: { username: string; password: string }) =>
-    attemptLogin(username, password),
+  async (_event, { username, password }: { username: string; password: string }) => {
+    const c = new TwdbClient();
+    const res = await attemptLogin(username, password, () => c);
+    if (res.ok) client = c;
+    return res;
+  },
 );
 ipcMain.handle('twdb:resizeSmokeTest', () => resizeSmokeTest());
+
+ipcMain.handle('library:pickRoot', async () => {
+  const r = await dialog.showOpenDialog({ properties: ['openDirectory'] });
+  return r.canceled ? null : r.filePaths[0];
+});
+ipcMain.handle('library:scan', async (_event, root: string) => {
+  const brandNames = client ? await getBrandNames(client) : [];
+  return scanLibrary(root, brandNames);
+});
 
 const createWindow = () => {
   // Create the browser window.
