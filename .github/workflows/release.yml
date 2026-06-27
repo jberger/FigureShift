@@ -29,7 +29,7 @@ jobs:
         include:
           - os: macos-14 # Apple Silicon (arm64)
             artifact: figureshift-mac-arm64
-          - os: macos-13 # Intel (x64)
+          - os: macos-15-intel # Intel (x64) — last x86_64 Actions image, available until Aug 2027
             artifact: figureshift-mac-x64
           - os: windows-latest # x64
             artifact: figureshift-win-x64
