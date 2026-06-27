@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { parseDocument, Document, parse } from 'yaml';
+import type { Collection } from '@joelberger/twdb-client';
 
 export type PhotoRole = 'cover' | 'typeSample' | 'gallery' | 'skip';
 
@@ -10,12 +11,19 @@ export interface MachinePhoto {
   caption?: string;
 }
 
+export interface MachineLink {
+  name: string;
+  url: string;
+}
+
 export interface MachineDoc {
   make?: string;
   model?: string;
   year?: string;
   serialNo?: string;
   description?: string;
+  collection?: Collection; // 'My Collection' | 'Parting Out' | 'Sightings'; defaults to 'My Collection' on push
+  links?: MachineLink[];
   photos: MachinePhoto[];
 }
 
