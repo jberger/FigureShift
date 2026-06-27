@@ -195,7 +195,7 @@ export function MachineEditor({
       <hr />
       <div>
         <button onClick={push} disabled={gaps.length > 0 || saving} title={gaps.length ? `Needs: ${gaps.join(', ')}` : ''}>
-          {machine.status === 'onTwdb' ? 'Push new photos' : 'Push to TWDB'}
+          {machine.status === 'onTwdb' ? 'Update on TWDB' : 'Push to TWDB'}
         </button>
         {gaps.length > 0 && <span style={{ color: '#a60', marginLeft: 8 }}>Needs: {gaps.join(', ')}</span>}
         {pushMsg && <p>{pushMsg}</p>}

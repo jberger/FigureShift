@@ -74,6 +74,17 @@ export async function pushMachine(client: TwdbClient, absPath: string): Promise<
     url = state.twdbUrl as string;
     galleryId = state.galleryId ?? '';
     if (!galleryId) throw new Error(`No galleryId recorded for ${absPath}`);
+    // Propagate metadata edits. Metadata-only (no images) → TWDB keeps the existing cover/type-sample.
+    // Keep the stored twdbUrl: a year/model edit changes the canonical slug, but any slug prefix still
+    // resolves by id, so the existing url stays valid.
+    await client.updateMachine(galleryId, {
+      collection: doc.collection ?? DEFAULT_COLLECTION,
+      brand: doc.make as string,
+      model: doc.model as string,
+      year: doc.year as string,
+      serialNo: doc.serialNo ?? '',
+      description: doc.description ?? '',
+    });
     for (const p of newGalleryPhotos(plan.gallery, state)) {
       const id = await safeAddPhoto(client, galleryId, abs(p));
       if (id) uploaded.push({ file: p.file, photoId: id });
@@ -113,10 +124,9 @@ export async function pushMachine(client: TwdbClient, absPath: string): Promise<
     }
   }
 
-  if (created) {
-    const links = pushLinks(doc);
-    if (links.length) await client.setLinks(galleryId, links);
-  }
+  // Sync links on both create and update (setLinks replaces the gallery's links).
+  const links = pushLinks(doc);
+  if (links.length) await client.setLinks(galleryId, links);
 
   writeTwdbYaml(absPath, { twdbUrl: url, galleryId, photos, lastPushedAt: new Date().toISOString() });
 
