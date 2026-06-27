@@ -11,4 +11,6 @@ contextBridge.exposeInMainWorld('figureshift', {
   brands: () => ipcRenderer.invoke('twdb:brands'),
   models: (make: string) => ipcRenderer.invoke('twdb:models', make),
   saveMachine: (absPath: string, doc: unknown) => ipcRenderer.invoke('machine:save', absPath, doc),
+  push: (absPath: string) => ipcRenderer.invoke('machine:push', absPath),
+  openExternal: (url: string) => ipcRenderer.invoke('app:openExternal', url),
 });

@@ -11,6 +11,10 @@ declare global {
       brands: () => Promise<string[]>;
       models: (make: string) => Promise<string[]>;
       saveMachine: (absPath: string, doc: MachineDoc) => Promise<{ ok: boolean }>;
+      push: (
+        absPath: string,
+      ) => Promise<{ ok: boolean; created?: boolean; photosUploaded?: number; url?: string; message?: string }>;
+      openExternal: (url: string) => Promise<void>;
     };
   }
 }
