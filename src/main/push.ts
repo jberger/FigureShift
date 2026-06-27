@@ -9,13 +9,15 @@ import {
   type MachinePhoto,
   type TwdbDoc,
 } from './machineYaml';
-import { partitionPhotos, missingPushFields, newGalleryPhotos, pushLinks } from './pushPlan';
+import { partitionPhotos, missingPushFields, reconcilePhotos, pushLinks } from './pushPlan';
 
 export class PushValidationError extends Error {}
 
 export interface PushResult {
   created: boolean;
   photosUploaded: number;
+  updated: number;
+  deleted: number;
   url: string;
 }
 
@@ -23,9 +25,14 @@ const DEFAULT_COLLECTION = 'My Collection' as const;
 
 const hashFile = (abs: string) => createHash('sha256').update(readFileSync(abs)).digest('hex');
 
-async function safeAddPhoto(client: TwdbClient, galleryId: string, abs: string): Promise<string | null> {
+async function safeAddPhoto(
+  client: TwdbClient,
+  galleryId: string,
+  abs: string,
+  caption: string,
+): Promise<string | null> {
   try {
-    const r = await client.addPhoto(galleryId, abs, { description: '' });
+    const r = await client.addPhoto(galleryId, abs, { description: caption });
     return r.photoId;
   } catch (err) {
     console.warn('TWDB addPhoto failed', abs, String(err));
@@ -33,9 +40,10 @@ async function safeAddPhoto(client: TwdbClient, galleryId: string, abs: string):
   }
 }
 
-// Push one machine. Creates the gallery (cover/type-sample via createMachine, gallery via addPhoto,
-// plus links) on first push; on later pushes only adds gallery photos lacking a twdbPhotoId.
-// Writes twdbUrl/galleryId immediately after create for machine-level idempotency.
+// Push one machine, reconciling its photos against TWDB. First push: createMachine (cover/type-sample
+// + metadata), write twdbUrl/galleryId immediately (idempotency). Re-push: updateMachine (metadata).
+// Then reconcile gallery photos — add new (with captions), update changed captions, delete skipped —
+// and refresh links. State (ids/urls/hash/caption) is written to machine.twdb.yaml.
 export async function pushMachine(client: TwdbClient, absPath: string): Promise<PushResult> {
   const doc = readMachineYaml(absPath);
   const state = readTwdbYaml(absPath);
@@ -45,20 +53,24 @@ export async function pushMachine(client: TwdbClient, absPath: string): Promise<
 
   const plan = partitionPhotos(doc.photos);
   const abs = (p: MachinePhoto) => path.join(absPath, p.file);
+  const fileAbs = (file: string) => path.join(absPath, file);
 
   const created = !state.twdbUrl;
   let galleryId: string;
   let url: string;
-  const uploaded: { file: string; photoId: string }[] = [];
+
+  const metadata = {
+    collection: doc.collection ?? DEFAULT_COLLECTION,
+    brand: doc.make as string,
+    model: doc.model as string,
+    year: doc.year as string,
+    serialNo: doc.serialNo ?? '',
+    description: doc.description ?? '',
+  };
 
   if (created) {
     const ref = await client.createMachine({
-      collection: doc.collection ?? DEFAULT_COLLECTION,
-      brand: doc.make as string,
-      model: doc.model as string,
-      year: doc.year as string,
-      serialNo: doc.serialNo ?? '',
-      description: doc.description ?? '',
+      ...metadata,
       coverImage: plan.cover ? abs(plan.cover) : undefined,
       typeSampleImage: plan.typeSample ? abs(plan.typeSample) : undefined,
     });
@@ -66,40 +78,45 @@ export async function pushMachine(client: TwdbClient, absPath: string): Promise<
     url = ref.url;
     // Idempotency: persist immediately so a later failure never re-creates the gallery.
     writeTwdbYaml(absPath, { ...state, twdbUrl: url, galleryId });
-    for (const p of plan.gallery) {
-      const id = await safeAddPhoto(client, galleryId, abs(p));
-      if (id) uploaded.push({ file: p.file, photoId: id });
-    }
   } else {
     url = state.twdbUrl as string;
     galleryId = state.galleryId ?? '';
     if (!galleryId) throw new Error(`No galleryId recorded for ${absPath}`);
-    // Propagate metadata edits. Metadata-only (no images) → TWDB keeps the existing cover/type-sample.
-    // Keep the stored twdbUrl: a year/model edit changes the canonical slug, but any slug prefix still
-    // resolves by id, so the existing url stays valid.
-    await client.updateMachine(galleryId, {
-      collection: doc.collection ?? DEFAULT_COLLECTION,
-      brand: doc.make as string,
-      model: doc.model as string,
-      year: doc.year as string,
-      serialNo: doc.serialNo ?? '',
-      description: doc.description ?? '',
-    });
-    for (const p of newGalleryPhotos(plan.gallery, state)) {
-      const id = await safeAddPhoto(client, galleryId, abs(p));
-      if (id) uploaded.push({ file: p.file, photoId: id });
-    }
+    // Metadata-only (no images) → TWDB keeps the existing cover/type-sample. Keep the stored url:
+    // a year/model edit changes the canonical slug, but any slug prefix still resolves by id.
+    await client.updateMachine(galleryId, metadata);
   }
 
   const photos: TwdbDoc['photos'] = { ...state.photos };
-  // Record content hashes for create-time photos (cover/type-sample) even when their id isn't recoverable.
   if (created && plan.cover) photos[plan.cover.file] = { ...photos[plan.cover.file], hash: hashFile(abs(plan.cover)) };
   if (created && plan.typeSample)
     photos[plan.typeSample.file] = { ...photos[plan.typeSample.file], hash: hashFile(abs(plan.typeSample)) };
 
-  // Map each uploaded gallery photo's id→url from steady state (one call). The cover and type-sample
-  // go to separate TWDB slots (not gallery photos), so they never appear here and keep just their
-  // hash — they're managed via createMachine/updateMachine, not by gallery-photo id.
+  // Reconcile gallery photos against recorded state.
+  const { adds, captionUpdates, deletes } = reconcilePhotos(doc, state);
+
+  const uploaded: { file: string; photoId: string; caption: string }[] = [];
+  for (const p of adds) {
+    const caption = p.caption ?? '';
+    const id = await safeAddPhoto(client, galleryId, abs(p), caption);
+    if (id) uploaded.push({ file: p.file, photoId: id, caption });
+  }
+
+  let updated = 0;
+  for (const u of captionUpdates) {
+    await client.updatePhoto(galleryId, u.photoId, { description: u.caption });
+    photos[u.file] = { ...photos[u.file], caption: u.caption };
+    updated++;
+  }
+
+  let deleted = 0;
+  for (const d of deletes) {
+    await client.deletePhoto(galleryId, d.photoId);
+    delete photos[d.file];
+    deleted++;
+  }
+
+  // Recover id→url for newly uploaded gallery photos from steady state (one call).
   if (uploaded.length > 0) {
     const list = await client.listMachinePhotos(galleryId);
     const urlById = new Map(list.map((p) => [p.photoId, p.url]));
@@ -107,7 +124,8 @@ export async function pushMachine(client: TwdbClient, absPath: string): Promise<
       photos[u.file] = {
         twdbPhotoId: u.photoId,
         twdbPhotoUrl: urlById.get(u.photoId) ?? '',
-        hash: hashFile(path.join(absPath, u.file)),
+        hash: hashFile(fileAbs(u.file)),
+        caption: u.caption,
       };
     }
   }
@@ -118,8 +136,6 @@ export async function pushMachine(client: TwdbClient, absPath: string): Promise<
 
   writeTwdbYaml(absPath, { twdbUrl: url, galleryId, photos, lastPushedAt: new Date().toISOString() });
 
-  const photosUploaded = created
-    ? (plan.cover ? 1 : 0) + (plan.typeSample ? 1 : 0) + uploaded.length
-    : uploaded.length;
-  return { created, photosUploaded, url };
+  const photosUploaded = (created ? (plan.cover ? 1 : 0) + (plan.typeSample ? 1 : 0) : 0) + uploaded.length;
+  return { created, photosUploaded, updated, deleted, url };
 }

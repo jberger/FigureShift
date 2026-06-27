@@ -80,7 +80,10 @@ export function MachineEditor({
     setPushMsg('Pushing to TWDB…');
     const res = await window.figureshift.push(machine.absPath);
     if (res.ok) {
-      setPushMsg(`${res.created ? 'Created' : 'Updated'} on TWDB — ${res.photosUploaded ?? 0} photo(s) uploaded.`);
+      setPushMsg(
+        `${res.created ? 'Created' : 'Updated'} on TWDB — ${res.photosUploaded ?? 0} uploaded` +
+          `, ${res.updated ?? 0} caption(s) updated, ${res.deleted ?? 0} deleted.`,
+      );
       setPushedUrl(res.url ?? '');
       onPushed();
     } else {
