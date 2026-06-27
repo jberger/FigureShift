@@ -1,18 +1,40 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import type { ScannedMachine } from './main/scan';
 import { ReviewScreen } from './renderer/ReviewScreen';
 
 export function App() {
+  const [phase, setPhase] = useState<'loading' | 'login' | 'ready'>('loading');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [remember, setRemember] = useState(true);
   const [status, setStatus] = useState('');
   const [machines, setMachines] = useState<ScannedMachine[] | null>(null);
+
+  useEffect(() => {
+    window.figureshift.autoLogin().then((r) => {
+      setUsername(r.username);
+      setPhase(r.ok ? 'ready' : 'login');
+    });
+  }, []);
 
   async function onLogin(e: FormEvent) {
     e.preventDefault();
     setStatus('Logging in…');
-    const res = await window.figureshift.login(username, password);
-    setStatus(res.ok ? 'Logged in ✓ — pick your library folder below.' : (res.message ?? 'Login failed'));
+    const res = await window.figureshift.login(username, password, remember);
+    if (res.ok) {
+      setStatus('');
+      setPassword('');
+      setPhase('ready');
+    } else {
+      setStatus(res.message ?? 'Login failed');
+    }
+  }
+
+  async function onLogout() {
+    await window.figureshift.logout();
+    setMachines(null);
+    setPassword('');
+    setPhase('login');
   }
 
   async function onPick() {
@@ -22,8 +44,30 @@ export function App() {
 
   if (machines) return <ReviewScreen machines={machines} />;
 
+  const wrap = { fontFamily: 'system-ui, sans-serif', padding: 24, maxWidth: 360 } as const;
+
+  if (phase === 'loading') {
+    return (
+      <main style={wrap}>
+        <h1>FigureShift</h1>
+        <p>Signing in…</p>
+      </main>
+    );
+  }
+
+  if (phase === 'ready') {
+    return (
+      <main style={wrap}>
+        <h1>FigureShift</h1>
+        <p>Logged in{username ? ` as ${username}` : ''} ✓</p>
+        <button onClick={onPick}>Pick library folder…</button>{' '}
+        <button onClick={onLogout}>Log out</button>
+      </main>
+    );
+  }
+
   return (
-    <main style={{ fontFamily: 'system-ui, sans-serif', padding: 24, maxWidth: 360 }}>
+    <main style={wrap}>
       <h1>FigureShift</h1>
       <form onSubmit={onLogin} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         <input placeholder="TWDB username" value={username} onChange={(e) => setUsername(e.target.value)} />
@@ -33,11 +77,12 @@ export function App() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
+        <label>
+          <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} /> Remember me
+        </label>
         <button type="submit">Log in</button>
       </form>
       <p>{status}</p>
-      <hr />
-      <button onClick={onPick}>Pick library folder…</button>
     </main>
   );
 }

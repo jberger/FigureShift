@@ -3,8 +3,10 @@
 import { contextBridge, ipcRenderer } from 'electron';
 
 contextBridge.exposeInMainWorld('figureshift', {
-  login: (username: string, password: string) =>
-    ipcRenderer.invoke('twdb:login', { username, password }),
+  login: (username: string, password: string, remember: boolean) =>
+    ipcRenderer.invoke('twdb:login', { username, password, remember }),
+  autoLogin: () => ipcRenderer.invoke('auth:autoLogin'),
+  logout: () => ipcRenderer.invoke('auth:logout'),
   resizeSmokeTest: () => ipcRenderer.invoke('twdb:resizeSmokeTest'),
   pickRoot: () => ipcRenderer.invoke('library:pickRoot'),
   scan: (root: string) => ipcRenderer.invoke('library:scan', root),

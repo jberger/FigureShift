@@ -4,7 +4,9 @@ import type { MachineDoc } from './main/machineYaml';
 declare global {
   interface Window {
     figureshift: {
-      login: (username: string, password: string) => Promise<{ ok: boolean; message?: string }>;
+      login: (username: string, password: string, remember: boolean) => Promise<{ ok: boolean; message?: string }>;
+      autoLogin: () => Promise<{ ok: boolean; username: string }>;
+      logout: () => Promise<void>;
       resizeSmokeTest: () => Promise<{ ok: boolean; bytes: number; contentType: string; message?: string }>;
       pickRoot: () => Promise<string | null>;
       scan: (root: string) => Promise<ScannedMachine[]>;

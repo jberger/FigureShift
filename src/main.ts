@@ -9,6 +9,13 @@ import { getBrands, getCreateModels } from './main/brands';
 import { scanLibrary } from './main/scan';
 import { writeMachineYaml, type MachineDoc } from './main/machineYaml';
 import { pushMachine } from './main/push';
+import {
+  loadCredentials,
+  saveCredentials,
+  clearCredentials,
+  forgetPassword,
+  rememberedUsername,
+} from './main/credentials';
 
 // `figimg://` serves thumbnails to the renderer; must be registered before app ready.
 protocol.registerSchemesAsPrivileged([
@@ -30,13 +37,39 @@ let scannedRoot: string | null = null;
 // IPC handlers bridging the renderer to twdb-client (main/Node process).
 ipcMain.handle(
   'twdb:login',
-  async (_event, { username, password }: { username: string; password: string }) => {
+  async (
+    _event,
+    { username, password, remember }: { username: string; password: string; remember?: boolean },
+  ) => {
     const c = new TwdbClient();
     const res = await attemptLogin(username, password, () => c);
-    if (res.ok) client = c;
+    if (res.ok) {
+      client = c;
+      if (remember) saveCredentials(username, password);
+      else clearCredentials();
+    }
     return res;
   },
 );
+
+// Auto-login from stored credentials (password stays in main; never sent to the renderer).
+ipcMain.handle('auth:autoLogin', async () => {
+  const creds = loadCredentials();
+  if (!creds) return { ok: false, username: rememberedUsername() ?? '' };
+  const c = new TwdbClient();
+  const res = await attemptLogin(creds.username, creds.password, () => c);
+  if (res.ok) {
+    client = c;
+    return { ok: true, username: creds.username };
+  }
+  forgetPassword(); // stale password; keep the username for pre-fill
+  return { ok: false, username: creds.username };
+});
+
+ipcMain.handle('auth:logout', () => {
+  client = null;
+  clearCredentials();
+});
 ipcMain.handle('twdb:resizeSmokeTest', () => resizeSmokeTest());
 
 ipcMain.handle('library:pickRoot', async () => {
