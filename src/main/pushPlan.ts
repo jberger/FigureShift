@@ -34,6 +34,33 @@ export function newGalleryPhotos(gallery: MachinePhoto[], state: TwdbDoc): Machi
   return gallery.filter((p) => !state.photos[p.file]?.twdbPhotoId);
 }
 
+export interface PhotoReconcile {
+  adds: MachinePhoto[];
+  captionUpdates: { file: string; photoId: string; caption: string }[];
+  deletes: { file: string; photoId: string }[];
+}
+
+// Diff machine.yaml photos against recorded TWDB state (gallery photos only):
+//  - role 'gallery' with no twdbPhotoId        -> add
+//  - role 'gallery' on TWDB, caption changed   -> caption update
+//  - role 'skip' that is on TWDB               -> delete
+export function reconcilePhotos(doc: MachineDoc, state: TwdbDoc): PhotoReconcile {
+  const adds: MachinePhoto[] = [];
+  const captionUpdates: PhotoReconcile['captionUpdates'] = [];
+  const deletes: PhotoReconcile['deletes'] = [];
+  for (const p of doc.photos) {
+    const st = state.photos[p.file];
+    if (p.role === 'gallery') {
+      if (!st?.twdbPhotoId) adds.push(p);
+      else if ((st.caption ?? '') !== (p.caption ?? ''))
+        captionUpdates.push({ file: p.file, photoId: st.twdbPhotoId, caption: p.caption ?? '' });
+    } else if (p.role === 'skip' && st?.twdbPhotoId) {
+      deletes.push({ file: p.file, photoId: st.twdbPhotoId });
+    }
+  }
+  return { adds, captionUpdates, deletes };
+}
+
 // Freeform links to attach, dropping entries missing a name or url.
 export function pushLinks(doc: MachineDoc): MachineLink[] {
   return (doc.links ?? []).filter((l) => l.name?.trim() && l.url?.trim());

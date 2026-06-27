@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { partitionPhotos, missingPushFields, newGalleryPhotos, pushLinks } from './pushPlan';
+import { partitionPhotos, missingPushFields, newGalleryPhotos, pushLinks, reconcilePhotos } from './pushPlan';
 import type { MachineDoc, MachinePhoto, TwdbDoc } from './machineYaml';
 
 const photos: MachinePhoto[] = [
@@ -56,5 +56,37 @@ describe('pushLinks', () => {
       pushLinks({ ...full, links: [{ name: 'YouTube', url: 'https://y' }, { name: '', url: 'x' }, { name: 'n', url: '' }] }),
     ).toEqual([{ name: 'YouTube', url: 'https://y' }]);
     expect(pushLinks(full)).toEqual([]);
+  });
+});
+
+describe('reconcilePhotos', () => {
+  const doc = (photos: MachinePhoto[]): MachineDoc => ({
+    make: 'R', model: 'M', year: '1948', serialNo: 's', description: 'd', photos,
+  });
+
+  it('adds gallery photos with no id, flags caption changes, deletes skipped on-TWDB photos', () => {
+    const photos: MachinePhoto[] = [
+      { file: 'a.jpg', role: 'gallery', caption: 'new A' }, // on TWDB, caption changed -> update
+      { file: 'b.jpg', role: 'gallery' },                  // not on TWDB -> add
+      { file: 'c.jpg', role: 'skip' },                     // on TWDB but skip -> delete
+      { file: 'd.jpg', role: 'gallery', caption: 'same' }, // on TWDB, caption unchanged -> noop
+    ];
+    const state: TwdbDoc = {
+      photos: {
+        'a.jpg': { twdbPhotoId: '1', caption: 'old A' },
+        'c.jpg': { twdbPhotoId: '3' },
+        'd.jpg': { twdbPhotoId: '4', caption: 'same' },
+      },
+    };
+    const r = reconcilePhotos(doc(photos), state);
+    expect(r.adds.map((p) => p.file)).toEqual(['b.jpg']);
+    expect(r.captionUpdates).toEqual([{ file: 'a.jpg', photoId: '1', caption: 'new A' }]);
+    expect(r.deletes).toEqual([{ file: 'c.jpg', photoId: '3' }]);
+  });
+
+  it('treats missing/empty captions as equal (no spurious update)', () => {
+    const photos: MachinePhoto[] = [{ file: 'a.jpg', role: 'gallery' }];
+    const state: TwdbDoc = { photos: { 'a.jpg': { twdbPhotoId: '1' } } };
+    expect(reconcilePhotos(doc(photos), state).captionUpdates).toEqual([]);
   });
 });

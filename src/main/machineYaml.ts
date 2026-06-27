@@ -31,6 +31,7 @@ export interface TwdbPhotoState {
   twdbPhotoId?: string;
   twdbPhotoUrl?: string;
   hash?: string;
+  caption?: string;
 }
 
 export interface TwdbDoc {
