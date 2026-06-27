@@ -44,6 +44,9 @@ function copyNativeDepClosure(projectDir: string, appNodeModules: string, roots:
 
 const config: ForgeConfig = {
   packagerConfig: {
+    // App icon. Forge/electron-packager appends the per-platform extension: .icns (macOS)
+    // exists; a Windows .ico will be added with the real (non-placeholder) icon before release.
+    icon: 'assets/icon',
     // Unpack node_modules from the asar so sharp's native .node and libvips .dylib
     // load from disk (dylibs cannot be loaded from inside an asar).
     asar: { unpack: '**/node_modules/**' },
