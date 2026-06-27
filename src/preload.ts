@@ -7,6 +7,9 @@ contextBridge.exposeInMainWorld('figureshift', {
     ipcRenderer.invoke('twdb:login', { username, password, remember }),
   autoLogin: () => ipcRenderer.invoke('auth:autoLogin'),
   logout: () => ipcRenderer.invoke('auth:logout'),
+  readPhoto: (args: { dir: string; file: string }) => ipcRenderer.invoke('photo:read', args),
+  saveEdit: (args: { dir: string; file: string; mode: 'overwrite' | 'new'; bytes: Uint8Array }) =>
+    ipcRenderer.invoke('photo:saveEdit', args),
   resizeSmokeTest: () => ipcRenderer.invoke('twdb:resizeSmokeTest'),
   pickRoot: () => ipcRenderer.invoke('library:pickRoot'),
   scan: (root: string) => ipcRenderer.invoke('library:scan', root),

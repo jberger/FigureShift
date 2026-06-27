@@ -9,6 +9,8 @@ import { getBrands, getCreateModels } from './main/brands';
 import { scanLibrary } from './main/scan';
 import { writeMachineYaml, type MachineDoc } from './main/machineYaml';
 import { pushMachine } from './main/push';
+import { editedFilename } from './main/editFiles';
+import { writeFileSync, readdirSync, readFileSync } from 'node:fs';
 import {
   loadCredentials,
   saveCredentials,
@@ -115,6 +117,36 @@ ipcMain.handle('machine:push', async (_event, absPath: string) => {
 });
 
 ipcMain.handle('app:openExternal', (_event, url: string) => shell.openExternal(url));
+
+ipcMain.handle('photo:read', (_event, { dir, file }: { dir: string; file: string }) => {
+  const absDir = path.resolve(dir);
+  const ok = scannedRoot && (absDir === scannedRoot || absDir.startsWith(scannedRoot + path.sep));
+  if (!ok) return { ok: false as const, message: 'Outside the library.' };
+  try {
+    return { ok: true as const, bytes: readFileSync(path.join(absDir, file)) };
+  } catch (err) {
+    return { ok: false as const, message: err instanceof Error ? err.message : String(err) };
+  }
+});
+
+ipcMain.handle(
+  'photo:saveEdit',
+  async (
+    _event,
+    { dir, file, mode, bytes }: { dir: string; file: string; mode: 'overwrite' | 'new'; bytes: Uint8Array },
+  ) => {
+    const absDir = path.resolve(dir);
+    const ok = scannedRoot && (absDir === scannedRoot || absDir.startsWith(scannedRoot + path.sep));
+    if (!ok) return { ok: false as const, message: 'Refusing to write outside the library.' };
+    try {
+      const outName = mode === 'overwrite' ? file : editedFilename(file, readdirSync(absDir));
+      writeFileSync(path.join(absDir, outName), Buffer.from(bytes));
+      return { ok: true as const, file: outName };
+    } catch (err) {
+      return { ok: false as const, message: err instanceof Error ? err.message : String(err) };
+    }
+  },
+);
 
 const createWindow = () => {
   // Create the browser window.

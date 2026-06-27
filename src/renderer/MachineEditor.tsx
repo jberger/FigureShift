@@ -4,6 +4,7 @@ import type { Collection } from '@joelberger/twdb-client';
 import type { MachineDoc, MachineLink } from '../main/machineYaml';
 import type { ScannedMachine } from '../main/scan';
 import { PhotoGrid } from './PhotoGrid';
+import { PhotoEditorModal, type EditResult } from './PhotoEditorModal';
 
 // Renderer-safe readiness mirror of the main-process missingPushFields (which pulls in the Node client).
 function missing(doc: MachineDoc): string[] {
@@ -33,12 +34,33 @@ export function MachineEditor({
   const [saving, setSaving] = useState(false);
   const [pushMsg, setPushMsg] = useState('');
   const [pushedUrl, setPushedUrl] = useState('');
+  const [editing, setEditing] = useState<string | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     setDoc(machine.machine);
     setPushMsg('');
     setPushedUrl('');
+    setEditing(null);
   }, [machine.relPath]);
+
+  async function onEdited(r: EditResult) {
+    if (r.mode === 'new' && r.newFile) {
+      // The edited copy takes the original's place: inherit its role (cover/type-sample/gallery)
+      // and caption, and skip the original.
+      const orig = doc.photos.find((p) => p.file === r.originalFile);
+      const next = doc.photos
+        .map((p) => (p.file === r.originalFile ? { ...p, role: 'skip' as const } : p))
+        .concat({ file: r.newFile, role: orig?.role ?? 'gallery', caption: orig?.caption });
+      const nextDoc = { ...doc, photos: next };
+      setDoc(nextDoc);
+      await window.figureshift.saveMachine(machine.absPath, nextDoc);
+      onSaved(nextDoc);
+    } else {
+      setRefreshKey((k) => k + 1); // overwrite: re-fetch the thumbnail
+    }
+    setEditing(null);
+  }
 
   useEffect(() => {
     const make = doc.make ?? '';
@@ -172,7 +194,18 @@ export function MachineEditor({
         absPath={machine.absPath}
         photos={doc.photos}
         onChange={(photos) => setDoc((d) => ({ ...d, photos }))}
+        onEdit={(file) => setEditing(file)}
+        refreshKey={refreshKey}
       />
+
+      {editing && (
+        <PhotoEditorModal
+          dir={machine.absPath}
+          file={editing}
+          onClose={() => setEditing(null)}
+          onEdited={onEdited}
+        />
+      )}
 
       <div className="push-section">
         <div style={{ marginTop: 4 }}>

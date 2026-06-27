@@ -7,6 +7,13 @@ declare global {
       login: (username: string, password: string, remember: boolean) => Promise<{ ok: boolean; message?: string }>;
       autoLogin: () => Promise<{ ok: boolean; username: string }>;
       logout: () => Promise<void>;
+      readPhoto: (args: { dir: string; file: string }) => Promise<{ ok: boolean; bytes?: Uint8Array; message?: string }>;
+      saveEdit: (args: {
+        dir: string;
+        file: string;
+        mode: 'overwrite' | 'new';
+        bytes: Uint8Array;
+      }) => Promise<{ ok: boolean; file?: string; message?: string }>;
       resizeSmokeTest: () => Promise<{ ok: boolean; bytes: number; contentType: string; message?: string }>;
       pickRoot: () => Promise<string | null>;
       scan: (root: string) => Promise<ScannedMachine[]>;

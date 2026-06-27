@@ -45,6 +45,7 @@
   },
   "dependencies": {
     "@joelberger/twdb-client": "github:jberger/twdb-client#v0.4.1",
+    "cropperjs": "^1.6.2",
     "electron-squirrel-startup": "^1.0.1",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",

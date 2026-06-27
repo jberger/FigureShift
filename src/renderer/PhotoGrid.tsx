@@ -4,18 +4,22 @@ import type { MachinePhoto, PhotoRole } from '../main/machineYaml';
 
 const ROLES: PhotoRole[] = ['cover', 'typeSample', 'gallery', 'skip'];
 
-function thumbUrl(absPath: string, file: string) {
-  return `figimg://f/${encodeURIComponent(`${absPath}/${file}`)}`;
+function thumbUrl(absPath: string, file: string, key: number) {
+  return `figimg://f/${encodeURIComponent(`${absPath}/${file}`)}?k=${key}`;
 }
 
 export function PhotoGrid({
   absPath,
   photos,
   onChange,
+  onEdit,
+  refreshKey,
 }: {
   absPath: string;
   photos: MachinePhoto[];
   onChange: (photos: MachinePhoto[]) => void;
+  onEdit: (file: string) => void;
+  refreshKey: number;
 }) {
   // Thumbnail tile size (px), persisted so it sticks across machines/sessions.
   const [size, setSize] = useState(() => Number(localStorage.getItem('fs-thumb')) || 160);
@@ -46,7 +50,7 @@ export function PhotoGrid({
       >
         {photos.map((p) => (
           <div key={p.file} className={`photo-card${p.role === 'skip' ? ' is-skip' : ''}`}>
-            <img src={thumbUrl(absPath, p.file)} alt={p.file} style={{ height: Math.round(size * 0.72) }} />
+            <img src={thumbUrl(absPath, p.file, refreshKey)} alt={p.file} style={{ height: Math.round(size * 0.72) }} />
             <select value={p.role} onChange={(e) => onChange(setRole(photos, p.file, e.target.value as PhotoRole))}>
               {ROLES.map((r) => (
                 <option key={r} value={r}>
@@ -55,6 +59,9 @@ export function PhotoGrid({
               ))}
             </select>
             <input placeholder="caption" value={p.caption ?? ''} onChange={(e) => setCaption(p.file, e.target.value)} />
+            <button className="btn btn-secondary btn-sm" onClick={() => onEdit(p.file)}>
+              Edit…
+            </button>
           </div>
         ))}
       </div>
