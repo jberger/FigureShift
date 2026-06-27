@@ -73,6 +73,15 @@ export async function pushMachine(
     description: doc.description ?? '',
   };
 
+  // Cover/type-sample are separate TWDB slots (not gallery photos). Detect a changed image by
+  // comparing the current file's hash to the one recorded at the last push.
+  const coverHash = plan.cover ? hashFile(abs(plan.cover)) : undefined;
+  const typeSampleHash = plan.typeSample ? hashFile(abs(plan.typeSample)) : undefined;
+  const coverChanged = !!plan.cover && coverHash !== state.photos[plan.cover.file]?.hash;
+  const typeSampleChanged = !!plan.typeSample && typeSampleHash !== state.photos[plan.typeSample.file]?.hash;
+
+  onProgress({ phase: 'metadata' });
+
   if (created) {
     const ref = await client.createMachine({
       ...metadata,
@@ -87,17 +96,19 @@ export async function pushMachine(
     url = state.twdbUrl as string;
     galleryId = state.galleryId ?? '';
     if (!galleryId) throw new Error(`No galleryId recorded for ${absPath}`);
-    // Metadata-only (no images) → TWDB keeps the existing cover/type-sample. Keep the stored url:
-    // a year/model edit changes the canonical slug, but any slug prefix still resolves by id.
-    await client.updateMachine(galleryId, metadata);
+    // Re-send cover/type-sample images only when they changed (else TWDB keeps the existing ones).
+    // Keep the stored url: a year/model edit changes the canonical slug, but it still resolves by id.
+    await client.updateMachine(galleryId, {
+      ...metadata,
+      coverImage: plan.cover && coverChanged ? abs(plan.cover) : undefined,
+      typeSampleImage: plan.typeSample && typeSampleChanged ? abs(plan.typeSample) : undefined,
+    });
   }
 
-  onProgress({ phase: 'metadata' });
-
   const photos: TwdbDoc['photos'] = { ...state.photos };
-  if (created && plan.cover) photos[plan.cover.file] = { ...photos[plan.cover.file], hash: hashFile(abs(plan.cover)) };
-  if (created && plan.typeSample)
-    photos[plan.typeSample.file] = { ...photos[plan.typeSample.file], hash: hashFile(abs(plan.typeSample)) };
+  if (plan.cover && coverChanged) photos[plan.cover.file] = { ...photos[plan.cover.file], hash: coverHash };
+  if (plan.typeSample && typeSampleChanged)
+    photos[plan.typeSample.file] = { ...photos[plan.typeSample.file], hash: typeSampleHash };
 
   // Reconcile gallery photos against recorded state.
   const { adds, captionUpdates, deletes } = reconcilePhotos(doc, state);
@@ -149,6 +160,6 @@ export async function pushMachine(
 
   writeTwdbYaml(absPath, { twdbUrl: url, galleryId, photos, lastPushedAt: new Date().toISOString() });
 
-  const photosUploaded = (created ? (plan.cover ? 1 : 0) + (plan.typeSample ? 1 : 0) : 0) + uploaded.length;
+  const photosUploaded = (coverChanged ? 1 : 0) + (typeSampleChanged ? 1 : 0) + uploaded.length;
   return { created, photosUploaded, updated, deleted, url };
 }
