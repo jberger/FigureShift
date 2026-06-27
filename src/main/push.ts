@@ -97,30 +97,18 @@ export async function pushMachine(client: TwdbClient, absPath: string): Promise<
   if (created && plan.typeSample)
     photos[plan.typeSample.file] = { ...photos[plan.typeSample.file], hash: hashFile(abs(plan.typeSample)) };
 
-  if (uploaded.length > 0 || (created && plan.cover)) {
+  // Map each uploaded gallery photo's id→url from steady state (one call). The cover and type-sample
+  // go to separate TWDB slots (not gallery photos), so they never appear here and keep just their
+  // hash — they're managed via createMachine/updateMachine, not by gallery-photo id.
+  if (uploaded.length > 0) {
     const list = await client.listMachinePhotos(galleryId);
     const urlById = new Map(list.map((p) => [p.photoId, p.url]));
-    const addedIds = new Set(uploaded.map((u) => u.photoId));
     for (const u of uploaded) {
       photos[u.file] = {
         twdbPhotoId: u.photoId,
         twdbPhotoUrl: urlById.get(u.photoId) ?? '',
         hash: hashFile(path.join(absPath, u.file)),
       };
-    }
-    // The cover (sent via createMachine) returns no id; it's the single listed id we didn't add.
-    // Only assign when unambiguous (mirrors DT; type-sample id is a separate slot, deferred).
-    if (created && plan.cover) {
-      const unmapped = list.map((p) => p.photoId).filter((pid) => !addedIds.has(pid));
-      if (unmapped.length === 1) {
-        photos[plan.cover.file] = {
-          ...photos[plan.cover.file],
-          twdbPhotoId: unmapped[0],
-          twdbPhotoUrl: urlById.get(unmapped[0]) ?? '',
-        };
-      } else {
-        console.warn('TWDB push: could not uniquely identify the cover photo id; left unset');
-      }
     }
   }
 
