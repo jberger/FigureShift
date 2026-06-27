@@ -183,6 +183,23 @@ label.field > span,
 .status.error {
   color: var(--accent);
 }
+.status.ok {
+  color: var(--success);
+}
+.progress-bar {
+  height: 6px;
+  max-width: 320px;
+  background: var(--surface-2);
+  border-radius: 999px;
+  overflow: hidden;
+  margin: 6px 0;
+}
+.progress-bar > span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.2s ease;
+}
 
 /* --- pills --- */
 .pill {

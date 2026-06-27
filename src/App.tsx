@@ -9,6 +9,8 @@ export function App() {
   const [remember, setRemember] = useState(true);
   const [status, setStatus] = useState('');
   const [machines, setMachines] = useState<ScannedMachine[] | null>(null);
+  const [scanning, setScanning] = useState(false);
+  const [scanErr, setScanErr] = useState('');
 
   useEffect(() => {
     window.figureshift.autoLogin().then((r) => {
@@ -39,7 +41,16 @@ export function App() {
 
   async function onPick() {
     const picked = await window.figureshift.pickRoot();
-    if (picked) setMachines(await window.figureshift.scan(picked));
+    if (!picked) return;
+    setScanning(true);
+    setScanErr('');
+    try {
+      setMachines(await window.figureshift.scan(picked));
+    } catch (e) {
+      setScanErr(e instanceof Error ? e.message : String(e));
+    } finally {
+      setScanning(false);
+    }
   }
 
   if (machines) return <ReviewScreen machines={machines} />;
@@ -62,13 +73,15 @@ export function App() {
           <h1>FigureShift</h1>
           <p>Logged in{username ? ` as ${username}` : ''} ✓</p>
           <div className="row">
-            <button className="btn btn-primary" onClick={onPick}>
+            <button className="btn btn-primary" onClick={onPick} disabled={scanning}>
               Pick library folder…
             </button>
-            <button className="btn btn-secondary" onClick={onLogout}>
+            <button className="btn btn-secondary" onClick={onLogout} disabled={scanning}>
               Log out
             </button>
           </div>
+          {scanning && <p className="status">Scanning your library…</p>}
+          {scanErr && <p className="status error">Scan failed: {scanErr}</p>}
         </div>
       </div>
     );

@@ -106,10 +106,10 @@ ipcMain.handle('machine:save', async (_event, absPath: string, doc: MachineDoc) 
   return { ok: true };
 });
 
-ipcMain.handle('machine:push', async (_event, absPath: string) => {
+ipcMain.handle('machine:push', async (event, absPath: string) => {
   if (!client) return { ok: false as const, message: 'Not logged in.' };
   try {
-    const res = await pushMachine(client, absPath);
+    const res = await pushMachine(client, absPath, (p) => event.sender.send('push:progress', p));
     return { ok: true as const, ...res };
   } catch (err) {
     return { ok: false as const, message: err instanceof Error ? err.message : String(err) };

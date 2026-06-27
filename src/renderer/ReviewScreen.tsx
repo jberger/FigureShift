@@ -29,13 +29,19 @@ export function ReviewScreen({ machines: initial }: { machines: ScannedMachine[]
   async function pushAllReady() {
     const targets = machines.map((m, i) => ({ m, i })).filter(({ m }) => m.status === 'new');
     let done = 0;
+    const failed: string[] = [];
     for (const { m, i } of targets) {
       setPushAll(`Pushing ${done + 1} of ${targets.length}: ${m.relPath}…`);
       const res = await window.figureshift.push(m.absPath);
       if (res.ok) markPushed(i);
+      else failed.push(m.relPath);
       done++;
     }
-    setPushAll(`Done — pushed ${done} machine(s).`);
+    setPushAll(
+      failed.length
+        ? `Pushed ${done - failed.length} of ${done}; ${failed.length} failed: ${failed.join(', ')}`
+        : `Done — pushed ${done} machine(s).`,
+    );
   }
 
   return (

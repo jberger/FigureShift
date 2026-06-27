@@ -17,5 +17,10 @@ contextBridge.exposeInMainWorld('figureshift', {
   models: (make: string) => ipcRenderer.invoke('twdb:models', make),
   saveMachine: (absPath: string, doc: unknown) => ipcRenderer.invoke('machine:save', absPath, doc),
   push: (absPath: string) => ipcRenderer.invoke('machine:push', absPath),
+  onPushProgress: (cb: (p: { phase: string; current?: number; total?: number }) => void) => {
+    const h = (_e: unknown, p: { phase: string; current?: number; total?: number }) => cb(p);
+    ipcRenderer.on('push:progress', h);
+    return () => ipcRenderer.removeListener('push:progress', h);
+  },
   openExternal: (url: string) => ipcRenderer.invoke('app:openExternal', url),
 });

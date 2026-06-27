@@ -1,5 +1,6 @@
 import type { ScannedMachine } from './main/scan';
 import type { MachineDoc } from './main/machineYaml';
+import type { PushProgress } from './main/pushProgress';
 
 declare global {
   interface Window {
@@ -32,6 +33,7 @@ declare global {
         message?: string;
       }>;
       openExternal: (url: string) => Promise<void>;
+      onPushProgress: (cb: (p: PushProgress) => void) => () => void;
     };
   }
 }

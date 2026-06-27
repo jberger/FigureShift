@@ -10,6 +10,7 @@ import {
   type TwdbDoc,
 } from './machineYaml';
 import { partitionPhotos, missingPushFields, reconcilePhotos, pushLinks } from './pushPlan';
+import { type PushProgress } from './pushProgress';
 
 export class PushValidationError extends Error {}
 
@@ -44,7 +45,11 @@ async function safeAddPhoto(
 // + metadata), write twdbUrl/galleryId immediately (idempotency). Re-push: updateMachine (metadata).
 // Then reconcile gallery photos — add new (with captions), update changed captions, delete skipped —
 // and refresh links. State (ids/urls/hash/caption) is written to machine.twdb.yaml.
-export async function pushMachine(client: TwdbClient, absPath: string): Promise<PushResult> {
+export async function pushMachine(
+  client: TwdbClient,
+  absPath: string,
+  onProgress: (p: PushProgress) => void = () => {},
+): Promise<PushResult> {
   const doc = readMachineYaml(absPath);
   const state = readTwdbYaml(absPath);
 
@@ -87,6 +92,8 @@ export async function pushMachine(client: TwdbClient, absPath: string): Promise<
     await client.updateMachine(galleryId, metadata);
   }
 
+  onProgress({ phase: 'metadata' });
+
   const photos: TwdbDoc['photos'] = { ...state.photos };
   if (created && plan.cover) photos[plan.cover.file] = { ...photos[plan.cover.file], hash: hashFile(abs(plan.cover)) };
   if (created && plan.typeSample)
@@ -96,13 +103,16 @@ export async function pushMachine(client: TwdbClient, absPath: string): Promise<
   const { adds, captionUpdates, deletes } = reconcilePhotos(doc, state);
 
   const uploaded: { file: string; photoId: string; caption: string }[] = [];
-  for (const p of adds) {
+  for (let i = 0; i < adds.length; i++) {
+    const p = adds[i];
+    onProgress({ phase: 'upload', current: i + 1, total: adds.length });
     const caption = p.caption ?? '';
     const id = await safeAddPhoto(client, galleryId, abs(p), caption);
     if (id) uploaded.push({ file: p.file, photoId: id, caption });
   }
 
   let updated = 0;
+  if (captionUpdates.length) onProgress({ phase: 'captions' });
   for (const u of captionUpdates) {
     await client.updatePhoto(galleryId, u.photoId, { description: u.caption });
     photos[u.file] = { ...photos[u.file], caption: u.caption };
@@ -110,11 +120,14 @@ export async function pushMachine(client: TwdbClient, absPath: string): Promise<
   }
 
   let deleted = 0;
+  if (deletes.length) onProgress({ phase: 'deletes' });
   for (const d of deletes) {
     await client.deletePhoto(galleryId, d.photoId);
     delete photos[d.file];
     deleted++;
   }
+
+  onProgress({ phase: 'finalize' });
 
   // Recover id→url for newly uploaded gallery photos from steady state (one call).
   if (uploaded.length > 0) {

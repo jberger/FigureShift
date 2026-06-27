@@ -5,6 +5,7 @@ import type { MachineDoc, MachineLink } from '../main/machineYaml';
 import type { ScannedMachine } from '../main/scan';
 import { PhotoGrid } from './PhotoGrid';
 import { PhotoEditorModal, type EditResult } from './PhotoEditorModal';
+import { pushProgressLabel, type PushProgress } from '../main/pushProgress';
 
 // Renderer-safe readiness mirror of the main-process missingPushFields (which pulls in the Node client).
 function missing(doc: MachineDoc): string[] {
@@ -34,6 +35,7 @@ export function MachineEditor({
   const [saving, setSaving] = useState(false);
   const [pushMsg, setPushMsg] = useState('');
   const [pushedUrl, setPushedUrl] = useState('');
+  const [progress, setProgress] = useState<PushProgress | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -94,11 +96,14 @@ export function MachineEditor({
   }
 
   async function push() {
-    setPushMsg('Saving…');
+    setPushMsg('');
     await window.figureshift.saveMachine(machine.absPath, doc);
     onSaved(doc);
-    setPushMsg('Pushing to TWDB…');
+    setProgress({ phase: 'metadata' });
+    const unsub = window.figureshift.onPushProgress((p) => setProgress(p));
     const res = await window.figureshift.push(machine.absPath);
+    unsub();
+    setProgress(null);
     if (res.ok) {
       setPushMsg(
         `${res.created ? 'Created' : 'Updated'} on TWDB — ${res.photosUploaded ?? 0} uploaded` +
@@ -220,7 +225,7 @@ export function MachineEditor({
           <button
             className="btn btn-primary"
             onClick={push}
-            disabled={gaps.length > 0 || saving}
+            disabled={gaps.length > 0 || saving || progress !== null}
             title={gaps.length ? `Needs: ${gaps.join(', ')}` : ''}
           >
             {machine.status === 'onTwdb' ? 'Update on TWDB' : 'Push to TWDB'}
@@ -232,7 +237,18 @@ export function MachineEditor({
             </button>
           )}
         </div>
-        {pushMsg && <p className="status">{pushMsg}</p>}
+        {progress ? (
+          <>
+            <p className="status">{pushProgressLabel(progress)}</p>
+            {progress.phase === 'upload' && progress.total ? (
+              <div className="progress-bar">
+                <span style={{ width: `${Math.round(((progress.current ?? 0) / progress.total) * 100)}%` }} />
+              </div>
+            ) : null}
+          </>
+        ) : (
+          pushMsg && <p className={`status${pushMsg.startsWith('Push failed') ? ' error' : ' ok'}`}>{pushMsg}</p>
+        )}
       </div>
     </section>
   );
