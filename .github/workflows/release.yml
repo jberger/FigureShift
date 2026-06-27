@@ -1,0 +1,73 @@
+name: release
+
+# Cut a release by pushing a vX.Y.Z tag (see ./release.sh). Builds unsigned macOS
+# (arm64 + Intel x64) and Windows installers and attaches them to a GitHub Release.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write # create the GitHub Release + upload assets
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.15.0 # 24.16.0 has an extract-zip regression that breaks packaging
+          cache: npm
+      - run: npm ci
+      - run: npm test
+
+  build:
+    needs: test
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-14 # Apple Silicon (arm64)
+            artifact: figureshift-mac-arm64
+          - os: macos-13 # Intel (x64)
+            artifact: figureshift-mac-x64
+          - os: windows-latest # x64
+            artifact: figureshift-win-x64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.15.0
+          cache: npm
+      - run: npm ci
+      # Each runner builds its native arch (no cross-compile), so sharp's native closure stays correct.
+      - run: npm run make
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: out/make/**/*
+          if-no-files-found: error
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - uses: softprops/action-gh-release@v2
+        with:
+          prerelease: true
+          fail_on_unmatched_files: true
+          files: artifacts/**/*
+          body: |
+            Beta build of **FigureShift** — these are **unsigned**.
+
+            **macOS** — download **arm64** for Apple Silicon (M-series) Macs or **x64** for Intel Macs.
+            On first launch, right-click **FigureShift.app → Open** (then **Open** in the dialog). If macOS still refuses:
+            ```
+            xattr -dr com.apple.quarantine /path/to/FigureShift.app
+            ```
+
+            **Windows** — SmartScreen may warn on the installer; click **More info → Run anyway**.
