@@ -11,33 +11,30 @@ export function MachineList({
 }) {
   const onTwdb = machines.filter((m) => m.status === 'onTwdb').length;
   return (
-    <nav style={{ borderRight: '1px solid #ccc', overflowY: 'auto', minWidth: 220, maxWidth: 280 }}>
-      <p style={{ padding: '8px 12px', margin: 0, fontWeight: 600 }}>
+    <>
+      <p className="progress">
         {onTwdb} of {machines.length} on TWDB
       </p>
-      <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+      <ul className="machine-list">
         {machines.map((m, i) => (
           <li key={m.relPath}>
             <button
+              className={`machine-row${i === selected ? ' is-selected' : ''}`}
               onClick={() => onSelect(i)}
-              style={{
-                display: 'block',
-                width: '100%',
-                textAlign: 'left',
-                padding: '6px 12px',
-                border: 'none',
-                background: i === selected ? '#e6f0ff' : 'transparent',
-                cursor: 'pointer',
-              }}
             >
-              {m.machine.make ?? '?'} {m.machine.model ?? ''}{' '}
-              <span style={{ color: '#888' }}>{m.status === 'onTwdb' ? '✓' : ''}</span>
-              <br />
-              <small style={{ color: '#888' }}>{m.relPath}</small>
+              <span className="title">
+                {m.machine.make ?? '?'} {m.machine.model ?? ''}
+              </span>{' '}
+              {m.status === 'onTwdb' ? (
+                <span className="pill pill-twdb">on TWDB ✓</span>
+              ) : (
+                <span className="pill pill-new">new</span>
+              )}
+              <small>{m.relPath}</small>
             </button>
           </li>
         ))}
       </ul>
-    </nav>
+    </>
   );
 }

@@ -39,16 +39,16 @@ export function ReviewScreen({ machines: initial }: { machines: ScannedMachine[]
   }
 
   return (
-    <div style={{ display: 'flex', height: '100vh', fontFamily: 'system-ui, sans-serif' }}>
-      <div style={{ display: 'flex', flexDirection: 'column', minWidth: 220, maxWidth: 280 }}>
+    <div className="review">
+      <nav className="sidebar">
         <MachineList machines={machines} selected={selected} onSelect={setSelected} />
-        <div style={{ borderTop: '1px solid #ccc', padding: 8 }}>
-          <button onClick={pushAllReady} style={{ width: '100%' }}>
+        <div className="sidebar-foot">
+          <button className="btn btn-secondary" onClick={pushAllReady}>
             Push all ready
           </button>
-          {pushAll && <p style={{ fontSize: 12, color: '#555', margin: '6px 0 0' }}>{pushAll}</p>}
+          {pushAll && <p className="note">{pushAll}</p>}
         </div>
-      </div>
+      </nav>
       <MachineEditor
         key={current.relPath}
         machine={current}

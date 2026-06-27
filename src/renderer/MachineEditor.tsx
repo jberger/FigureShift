@@ -34,14 +34,12 @@ export function MachineEditor({
   const [pushMsg, setPushMsg] = useState('');
   const [pushedUrl, setPushedUrl] = useState('');
 
-  // Reset the form when a different machine is selected.
   useEffect(() => {
     setDoc(machine.machine);
     setPushMsg('');
     setPushedUrl('');
   }, [machine.relPath]);
 
-  // Fetch the selected make's models for the datalist (type-or-pick).
   useEffect(() => {
     const make = doc.make ?? '';
     if (!make) {
@@ -92,119 +90,116 @@ export function MachineEditor({
   }
 
   return (
-    <section style={{ padding: 16, overflowY: 'auto', flex: 1 }}>
-      <h2>
-        {doc.make ?? '?'} {doc.model ?? ''}
-      </h2>
+    <section className="editor">
+      <div className="editor-inner">
+        <h2>
+          {doc.make ?? '?'} {doc.model ?? ''}
+        </h2>
 
-      <label style={{ display: 'block', marginBottom: 8 }}>
-        Make
-        <select value={doc.make ?? ''} onChange={(e) => set('make', e.target.value)} style={{ width: '100%' }}>
-          <option value="">— choose brand —</option>
-          {brands.map((b, i) => (
-            <option key={`${b}-${i}`} value={b}>
-              {b}
-            </option>
+        <label className="field">
+          <span>Make</span>
+          <select value={doc.make ?? ''} onChange={(e) => set('make', e.target.value)}>
+            <option value="">— choose brand —</option>
+            {brands.map((b, i) => (
+              <option key={`${b}-${i}`} value={b}>
+                {b}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="field">
+          <span>Model</span>
+          <input list="fs-models" value={doc.model ?? ''} onChange={(e) => set('model', e.target.value)} />
+          <datalist id="fs-models">
+            {models.map((m, i) => (
+              <option key={`${m}-${i}`} value={m} />
+            ))}
+          </datalist>
+        </label>
+
+        <label className="field">
+          <span>Year{!yearOk && <span className="needs"> — use NNNN or e.g. 192X</span>}</span>
+          <input
+            className={yearOk ? '' : 'invalid'}
+            value={doc.year ?? ''}
+            onChange={(e) => set('year', e.target.value)}
+            style={{ maxWidth: 140 }}
+          />
+        </label>
+
+        <label className="field">
+          <span>Serial</span>
+          <input value={doc.serialNo ?? ''} onChange={(e) => set('serialNo', e.target.value)} />
+        </label>
+
+        <label className="field">
+          <span>Description</span>
+          <textarea value={doc.description ?? ''} onChange={(e) => set('description', e.target.value)} rows={3} />
+        </label>
+
+        <label className="field">
+          <span>Collection</span>
+          <select
+            value={doc.collection ?? 'My Collection'}
+            onChange={(e) => setDoc((d) => ({ ...d, collection: e.target.value as Collection }))}
+          >
+            <option value="My Collection">My Collection</option>
+            <option value="Parting Out">Parting Out</option>
+            <option value="Sightings">Sightings</option>
+          </select>
+        </label>
+
+        <fieldset>
+          <legend>Links (optional)</legend>
+          {(doc.links ?? []).map((l, i) => (
+            <div key={i} className="link-row">
+              <input placeholder="name" value={l.name} onChange={(e) => setLink(i, 'name', e.target.value)} style={{ maxWidth: 140 }} />
+              <input placeholder="https://…" value={l.url} onChange={(e) => setLink(i, 'url', e.target.value)} />
+              <button className="btn btn-secondary btn-sm" type="button" onClick={() => removeLink(i)}>
+                ✕
+              </button>
+            </div>
           ))}
-        </select>
-      </label>
+          <button className="btn btn-secondary btn-sm" type="button" onClick={addLink}>
+            + add link
+          </button>
+        </fieldset>
+      </div>
 
-      <label style={{ display: 'block', marginBottom: 8 }}>
-        Collection
-        <select
-          value={doc.collection ?? 'My Collection'}
-          onChange={(e) => setDoc((d) => ({ ...d, collection: e.target.value as Collection }))}
-          style={{ width: '100%' }}
-        >
-          <option value="My Collection">My Collection</option>
-          <option value="Parting Out">Parting Out</option>
-          <option value="Sightings">Sightings</option>
-        </select>
-      </label>
-
-      <label style={{ display: 'block', marginBottom: 8 }}>
-        Model
-        <input
-          list="fs-models"
-          value={doc.model ?? ''}
-          onChange={(e) => set('model', e.target.value)}
-          style={{ width: '100%' }}
-        />
-        <datalist id="fs-models">
-          {models.map((m, i) => (
-            <option key={`${m}-${i}`} value={m} />
-          ))}
-        </datalist>
-      </label>
-
-      <label style={{ display: 'block', marginBottom: 8 }}>
-        Year
-        <input
-          value={doc.year ?? ''}
-          onChange={(e) => set('year', e.target.value)}
-          style={{ width: 120, borderColor: yearOk ? undefined : 'red' }}
-        />
-        {!yearOk && <span style={{ color: 'red' }}> use NNNN or e.g. 192X</span>}
-      </label>
-
-      <label style={{ display: 'block', marginBottom: 8 }}>
-        Serial
-        <input value={doc.serialNo ?? ''} onChange={(e) => set('serialNo', e.target.value)} style={{ width: '100%' }} />
-      </label>
-
-      <label style={{ display: 'block', marginBottom: 8 }}>
-        Description
-        <textarea
-          value={doc.description ?? ''}
-          onChange={(e) => set('description', e.target.value)}
-          rows={3}
-          style={{ width: '100%' }}
-        />
-      </label>
-
-      <fieldset style={{ marginBottom: 8 }}>
-        <legend>Links (optional)</legend>
-        {(doc.links ?? []).map((l, i) => (
-          <div key={i} style={{ display: 'flex', gap: 6, marginBottom: 4 }}>
-            <input placeholder="name" value={l.name} onChange={(e) => setLink(i, 'name', e.target.value)} />
-            <input
-              placeholder="https://…"
-              value={l.url}
-              onChange={(e) => setLink(i, 'url', e.target.value)}
-              style={{ flex: 1 }}
-            />
-            <button type="button" onClick={() => removeLink(i)}>
-              ✕
-            </button>
-          </div>
-        ))}
-        <button type="button" onClick={addLink}>
-          + add link
-        </button>
-      </fieldset>
-
+      <h3 className="photos-h">Photos</h3>
       <PhotoGrid
         absPath={machine.absPath}
         photos={doc.photos}
         onChange={(photos) => setDoc((d) => ({ ...d, photos }))}
       />
 
-      <div style={{ marginTop: 12 }}>
-        <button onClick={save} disabled={saving || !yearOk}>
-          {saving ? 'Saving…' : 'Save'}
-        </button>
-      </div>
+      <div className="push-section">
+        <div style={{ marginTop: 4 }}>
+          <button className="btn btn-primary" onClick={save} disabled={saving || !yearOk}>
+            {saving ? 'Saving…' : 'Save'}
+          </button>
+        </div>
 
-      <hr />
-      <div>
-        <button onClick={push} disabled={gaps.length > 0 || saving} title={gaps.length ? `Needs: ${gaps.join(', ')}` : ''}>
-          {machine.status === 'onTwdb' ? 'Update on TWDB' : 'Push to TWDB'}
-        </button>
-        {gaps.length > 0 && <span style={{ color: '#a60', marginLeft: 8 }}>Needs: {gaps.join(', ')}</span>}
-        {pushMsg && <p>{pushMsg}</p>}
-        {pushedUrl && (
-          <button onClick={() => window.figureshift.openExternal(pushedUrl)}>View on TWDB ↗</button>
-        )}
+        <hr className="section-divider" />
+
+        <div className="push-bar">
+          <button
+            className="btn btn-primary"
+            onClick={push}
+            disabled={gaps.length > 0 || saving}
+            title={gaps.length ? `Needs: ${gaps.join(', ')}` : ''}
+          >
+            {machine.status === 'onTwdb' ? 'Update on TWDB' : 'Push to TWDB'}
+          </button>
+          {gaps.length > 0 && <span className="needs">Needs: {gaps.join(', ')}</span>}
+          {pushedUrl && (
+            <button className="btn btn-secondary" onClick={() => window.figureshift.openExternal(pushedUrl)}>
+              View on TWDB ↗
+            </button>
+          )}
+        </div>
+        {pushMsg && <p className="status">{pushMsg}</p>}
       </div>
     </section>
   );

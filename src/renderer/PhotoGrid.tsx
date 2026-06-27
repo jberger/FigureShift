@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { setRole } from '../main/photoRoles';
 import type { MachinePhoto, PhotoRole } from '../main/machineYaml';
 
@@ -16,37 +17,47 @@ export function PhotoGrid({
   photos: MachinePhoto[];
   onChange: (photos: MachinePhoto[]) => void;
 }) {
+  // Thumbnail tile size (px), persisted so it sticks across machines/sessions.
+  const [size, setSize] = useState(() => Number(localStorage.getItem('fs-thumb')) || 160);
+  const onSize = (v: number) => {
+    setSize(v);
+    localStorage.setItem('fs-thumb', String(v));
+  };
+
   const setCaption = (file: string, caption: string) =>
     onChange(photos.map((p) => (p.file === file ? { ...p, caption } : p)));
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 12 }}>
-      {photos.map((p) => (
-        <div key={p.file} style={{ border: '1px solid #ddd', padding: 6 }}>
-          <img
-            src={thumbUrl(absPath, p.file)}
-            alt={p.file}
-            style={{ width: '100%', height: 100, objectFit: 'cover', opacity: p.role === 'skip' ? 0.4 : 1 }}
-          />
-          <select
-            value={p.role}
-            onChange={(e) => onChange(setRole(photos, p.file, e.target.value as PhotoRole))}
-            style={{ width: '100%' }}
-          >
-            {ROLES.map((r) => (
-              <option key={r} value={r}>
-                {r}
-              </option>
-            ))}
-          </select>
-          <input
-            placeholder="caption"
-            value={p.caption ?? ''}
-            onChange={(e) => setCaption(p.file, e.target.value)}
-            style={{ width: '100%' }}
-          />
-        </div>
-      ))}
-    </div>
+    <>
+      <div className="photo-controls">
+        <label htmlFor="thumb-size">Thumbnail size</label>
+        <input
+          id="thumb-size"
+          type="range"
+          min={110}
+          max={340}
+          value={size}
+          onChange={(e) => onSize(Number(e.target.value))}
+        />
+      </div>
+      <div
+        className="photo-grid"
+        style={{ gridTemplateColumns: `repeat(auto-fill, minmax(${size}px, 1fr))` }}
+      >
+        {photos.map((p) => (
+          <div key={p.file} className={`photo-card${p.role === 'skip' ? ' is-skip' : ''}`}>
+            <img src={thumbUrl(absPath, p.file)} alt={p.file} style={{ height: Math.round(size * 0.72) }} />
+            <select value={p.role} onChange={(e) => onChange(setRole(photos, p.file, e.target.value as PhotoRole))}>
+              {ROLES.map((r) => (
+                <option key={r} value={r}>
+                  {r}
+                </option>
+              ))}
+            </select>
+            <input placeholder="caption" value={p.caption ?? ''} onChange={(e) => setCaption(p.file, e.target.value)} />
+          </div>
+        ))}
+      </div>
+    </>
   );
 }
