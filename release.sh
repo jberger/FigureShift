@@ -114,12 +114,17 @@ else
   fi
 
   # Bump package.json + package-lock.json to the bare version (no leading 'v'), no git tag.
-  npm version --no-git-tag-version "${VERSION#v}" >/dev/null
-  echo "==> set version to ${VERSION#v} in package.json:"
-  git --no-pager diff -- package.json
-
-  git add package.json package-lock.json
-  git commit -m "Release $VERSION"
+  # If already at that version (e.g. the very first release), skip the bump and tag HEAD as-is.
+  cur="$(node -p "require('./package.json').version")"
+  if [[ "$cur" == "${VERSION#v}" ]]; then
+    echo "==> package.json already at ${VERSION#v}; tagging current commit"
+  else
+    npm version --no-git-tag-version "${VERSION#v}" >/dev/null
+    echo "==> set version: $cur -> ${VERSION#v} in package.json:"
+    git --no-pager diff -- package.json
+    git add package.json package-lock.json
+    git commit -m "Release $VERSION"
+  fi
   git tag -a "$VERSION" -m "Release $VERSION"
 
   echo "==> pushing main + tag $VERSION (triggers the release build)"
