@@ -11,11 +11,17 @@ DT-leads strategy — fix in the library, both DT and FigureShift benefit.
   fuzzy matching: e.g. `SCM` → *Smith Corona*, `Smith-Corona` → *Smith Corona*. (Punctuation variants
   like the hyphen may already normalize via `norm`/tokenize — verify; abbreviations like `SCM`
   definitely need an explicit alias table.) *(beta feedback)*
-- **Prefer the longer / more-specific make match.** "Smith Corona" is being detected as **"Corona"**
-  (a shorter make that also exists on TWDB). The matcher needs to recognize that "Corona" matched but
-  keep going and prefer "Smith Corona" as the longer, more-token-consuming, more-specific candidate.
-  Tricky — likely a scoring tweak in `inferMake` (favor multi-token candidates / more path tokens
-  consumed when one make name is a subset of another). *(beta feedback)*
+- **Prefer the longer / more-specific match (make AND model).** Shorter candidates win when a longer,
+  more-specific one should: "Smith Corona" detected as **"Corona"**; Brother **"Deluxe 660TR"** detected
+  as only **"Deluxe"**. The matcher needs to recognize the short candidate matched but keep going and
+  prefer the longer, more-token-consuming candidate when one name is a subset/prefix of another. Tricky —
+  a scoring tweak in both `inferMake` and `inferModel` (favor multi-token candidates / more path tokens
+  consumed). *(beta feedback)*
+- **Normalize spacing variants like "deluxe" vs "de luxe". (Common — prioritize.)** A narrow edge case
+  but a *frequent* one (many models carry "Deluxe"/"De Luxe"), so worth doing robustly. Normalize on
+  **both** sides during detection — the user's folder name AND the TWDB candidate names (collapse
+  internal spaces so "de luxe" ≡ "deluxe"). (`norm` already strips non-alphanumerics, so the joined-token
+  path may partly handle it — verify and make it explicit/robust.) *(beta feedback)*
 - **Loose-year gaps in `suggestTwdbYear`.** Today: `1960s` → `196X` works, but a **literal `196X` / `19XX`
   in the folder name is NOT detected** (it only scans `\d{4}`), nor `60s` (2-digit decade), nor `1960's`
   (apostrophe). Consider matching `\d{3}[xX]` / `\d{2}[xX]{2}` and 2-digit decades. (`isValidTwdbYear`
