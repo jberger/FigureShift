@@ -44,7 +44,7 @@
     "vitest": "^4.1.9"
   },
   "dependencies": {
-    "@joelberger/twdb-client": "github:jberger/twdb-client#v0.4.1",
+    "@joelberger/twdb-client": "github:jberger/twdb-client#v0.5.0",
     "cropperjs": "^1.6.2",
     "electron-squirrel-startup": "^1.0.1",
     "react": "^19.2.7",
