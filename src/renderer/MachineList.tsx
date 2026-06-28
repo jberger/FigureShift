@@ -27,6 +27,8 @@ export function MachineList({
               </span>{' '}
               {m.status === 'onTwdb' ? (
                 <span className="pill pill-twdb">on TWDB ✓</span>
+              ) : m.machine.ready ? (
+                <span className="pill pill-ready">ready</span>
               ) : (
                 <span className="pill pill-new">new</span>
               )}

@@ -95,6 +95,13 @@ export function MachineEditor({
     onSaved(doc);
   }
 
+  async function setReady(v: boolean) {
+    const nextDoc = { ...doc, ready: v };
+    setDoc(nextDoc);
+    await window.figureshift.saveMachine(machine.absPath, nextDoc);
+    onSaved(nextDoc);
+  }
+
   async function push() {
     setPushMsg('');
     await window.figureshift.saveMachine(machine.absPath, doc);
@@ -225,12 +232,23 @@ export function MachineEditor({
 
         <hr className="section-divider" />
 
+        <label className="remember">
+          <input type="checkbox" checked={!!doc.ready} onChange={(e) => setReady(e.target.checked)} /> Ready to
+          upload to the Typewriter Database — I've checked the make, model, and year.
+        </label>
+        <p className="hint">
+          Make, model, and year are <strong>best-effort guesses</strong> from your folder name. Please
+          double-check them — uploading creates a public entry on the Typewriter Database.
+        </p>
+
         <div className="push-bar">
           <button
             className="btn btn-primary"
             onClick={push}
-            disabled={gaps.length > 0 || saving || progress !== null}
-            title={gaps.length ? `Needs: ${gaps.join(', ')}` : ''}
+            disabled={gaps.length > 0 || saving || progress !== null || !doc.ready}
+            title={
+              gaps.length ? `Needs: ${gaps.join(', ')}` : !doc.ready ? 'Check "Ready to upload" first' : ''
+            }
           >
             {machine.status === 'onTwdb' ? 'Update on TWDB' : 'Push to TWDB'}
           </button>

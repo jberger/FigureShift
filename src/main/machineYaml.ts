@@ -24,6 +24,7 @@ export interface MachineDoc {
   description?: string;
   collection?: Collection; // 'My Collection' | 'Parting Out' | 'Sightings'; defaults to 'My Collection' on push
   links?: MachineLink[];
+  ready?: boolean; // user has reviewed the (best-effort) details and approved upload to TWDB
   photos: MachinePhoto[];
 }
 

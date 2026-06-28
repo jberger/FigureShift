@@ -26,8 +26,10 @@ export function ReviewScreen({ machines: initial, onHelp }: { machines: ScannedM
     setMachines((ms) => ms.map((m, j) => (j === i ? { ...m, status: 'onTwdb' } : m)));
   }
 
+  const readyCount = machines.filter((m) => m.status === 'new' && m.machine.ready).length;
+
   async function pushAllReady() {
-    const targets = machines.map((m, i) => ({ m, i })).filter(({ m }) => m.status === 'new');
+    const targets = machines.map((m, i) => ({ m, i })).filter(({ m }) => m.status === 'new' && m.machine.ready);
     let done = 0;
     const failed: string[] = [];
     for (const { m, i } of targets) {
@@ -49,8 +51,8 @@ export function ReviewScreen({ machines: initial, onHelp }: { machines: ScannedM
       <nav className="sidebar">
         <MachineList machines={machines} selected={selected} onSelect={setSelected} />
         <div className="sidebar-foot">
-          <button className="btn btn-secondary" onClick={pushAllReady}>
-            Push all ready
+          <button className="btn btn-secondary" onClick={pushAllReady} disabled={readyCount === 0}>
+            Push all ready{readyCount ? ` (${readyCount})` : ''}
           </button>
           {pushAll && <p className="note">{pushAll}</p>}
           <p className="note">

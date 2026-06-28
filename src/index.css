@@ -218,6 +218,10 @@ label.field > span,
   background: var(--success-soft);
   color: var(--success);
 }
+.pill-ready {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
 
 /* --- master-detail review --- */
 .review {
