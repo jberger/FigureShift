@@ -151,8 +151,10 @@ ipcMain.handle(
 const createWindow = () => {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
+    width: 1100,
+    height: 820,
+    minWidth: 820,
+    minHeight: 680,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
     },
