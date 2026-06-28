@@ -195,6 +195,10 @@ export function MachineEditor({
       </div>
 
       <h3 className="photos-h">Photos</h3>
+      <p className="hint">
+        Give each photo a role: one <strong>cover</strong>, one <strong>type sample</strong>, the rest{' '}
+        <strong>gallery</strong>; mark anything you don't want uploaded as <strong>skip</strong>.
+      </p>
       <PhotoGrid
         absPath={machine.absPath}
         photos={doc.photos}

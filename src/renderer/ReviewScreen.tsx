@@ -4,7 +4,7 @@ import type { MachineDoc } from '../main/machineYaml';
 import { MachineList } from './MachineList';
 import { MachineEditor } from './MachineEditor';
 
-export function ReviewScreen({ machines: initial }: { machines: ScannedMachine[] }) {
+export function ReviewScreen({ machines: initial, onHelp }: { machines: ScannedMachine[]; onHelp: () => void }) {
   const [machines, setMachines] = useState(initial);
   const [selected, setSelected] = useState(0);
   const [brands, setBrands] = useState<string[]>([]);
@@ -53,6 +53,11 @@ export function ReviewScreen({ machines: initial }: { machines: ScannedMachine[]
             Push all ready
           </button>
           {pushAll && <p className="note">{pushAll}</p>}
+          <p className="note">
+            <button className="link-btn" onClick={onHelp}>
+              How it works
+            </button>
+          </p>
         </div>
       </nav>
       <MachineEditor
