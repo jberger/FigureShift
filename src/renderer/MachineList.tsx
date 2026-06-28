@@ -23,7 +23,7 @@ export function MachineList({
               onClick={() => onSelect(i)}
             >
               <span className="title">
-                {m.machine.make ?? '?'} {m.machine.model ?? ''}
+                {m.machine.make ?? '(not detected)'} {m.machine.model ?? ''}
               </span>{' '}
               {m.status === 'onTwdb' ? (
                 <span className="pill pill-twdb">on TWDB ✓</span>

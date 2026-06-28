@@ -127,7 +127,7 @@ export function MachineEditor({
     <section className="editor">
       <div className="editor-inner">
         <h2>
-          {doc.make ?? '?'} {doc.model ?? ''}
+          {doc.make ?? '(not detected)'} {doc.model ?? ''}
         </h2>
 
         <label className="field">
