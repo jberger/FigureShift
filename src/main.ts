@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, ipcMain, protocol, net, shell } from 'electron';
+import { app, BrowserWindow, Menu, dialog, ipcMain, protocol, net, shell, type MenuItemConstructorOptions } from 'electron';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import started from 'electron-squirrel-startup';
@@ -176,7 +176,33 @@ const createWindow = () => {
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
+// A clean, native menu. Drops the browser cruft (Reload / Force Reload / Toggle DevTools) that
+// confused beta users, while keeping Edit (copy/paste/undo — needed for the form fields and for
+// Cmd+C/V on macOS), Window, the macOS app menu, and Help. The full developer View menu appears
+// only in development.
+function buildAppMenu(): Menu {
+  const isMac = process.platform === 'darwin';
+  const template: MenuItemConstructorOptions[] = [
+    ...(isMac ? [{ role: 'appMenu' as const }] : []),
+    { role: 'editMenu' },
+    ...(!app.isPackaged ? [{ role: 'viewMenu' as const }] : []),
+    { role: 'windowMenu' },
+    {
+      role: 'help',
+      submenu: [
+        { label: 'Typewriter Database', click: () => shell.openExternal('https://typewriterdatabase.com') },
+        {
+          label: 'Report a Problem',
+          click: () => shell.openExternal('https://github.com/jberger/FigureShift/issues'),
+        },
+      ],
+    },
+  ];
+  return Menu.buildFromTemplate(template);
+}
+
 app.whenReady().then(() => {
+  Menu.setApplicationMenu(buildAppMenu());
   // Serve image thumbnails, confined to the scanned library root.
   protocol.handle('figimg', (request) => {
     const abs = path.resolve(decodeURIComponent(new URL(request.url).pathname.replace(/^\//, '')));
