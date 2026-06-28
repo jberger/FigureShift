@@ -36,12 +36,6 @@ DT-leads strategy — fix in the library, both DT and FigureShift benefit.
 - **Remember the library/base directory** across launches (auto-rescan or offer to). Needs the settings
   store.
 
-## UI clarity
-
-- **Replace the `?` placeholder.** When make/model can't be inferred from the path, the UI shows `?`
-  (machine list + editor heading), which isn't obvious to some users. Use explicit text, e.g.
-  *"(make not detected)"* / *"Needs make"*. *(beta feedback)*
-
 ## Per-machine UX
 
 - **"Re-detect from folder name" (per-machine).** `scanLibrary` never overwrites an existing
