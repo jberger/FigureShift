@@ -65,9 +65,8 @@ jobs:
             Beta build of **FigureShift** — these are **unsigned**.
 
             **macOS** — download **arm64** for Apple Silicon (M-series) Macs or **x64** for Intel Macs.
-            On first launch, right-click **FigureShift.app → Open** (then **Open** in the dialog). If macOS still refuses:
-            ```
-            xattr -dr com.apple.quarantine /path/to/FigureShift.app
-            ```
+            It's unsigned, so macOS blocks it on first launch. Either:
+            - open **System Settings → Privacy & Security**, then click **Open Anyway** (after you've tried to open the app once), or
+            - run `xattr -dr com.apple.quarantine /path/to/FigureShift.app`
 
             **Windows** — SmartScreen may warn on the installer; click **More info → Run anyway**.

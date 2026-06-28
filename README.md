@@ -29,7 +29,7 @@ macOS (Apple Silicon or Intel) and Windows.
 
 These are early **beta** builds, and they're **unsigned**, so on first launch:
 
-- **macOS** — right-click the app and choose **Open** (then **Open** again in the dialog).
+- **macOS** — it's unsigned, so macOS blocks it the first time. Open **System Settings → Privacy & Security** and click **Open Anyway**, or run `xattr -dr com.apple.quarantine /path/to/FigureShift.app`.
 - **Windows** — if SmartScreen warns, click **More info → Run anyway**.
 
 (Each release lists the exact steps.)
