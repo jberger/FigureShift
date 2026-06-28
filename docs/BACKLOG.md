@@ -7,21 +7,22 @@ Running queue of issues/ideas (beta feedback + deferred work). Not prioritized; 
 These live mostly in `@joelberger/twdb-client` (`inferMake`/`inferModel`/`suggestTwdbYear`) per the
 DT-leads strategy — fix in the library, both DT and FigureShift benefit.
 
-- **Built-in manufacturer aliases.** Map common abbreviations/variants to the canonical TWDB make before
-  fuzzy matching: e.g. `SCM` → *Smith Corona*, `Smith-Corona` → *Smith Corona*. (Punctuation variants
-  like the hyphen may already normalize via `norm`/tokenize — verify; abbreviations like `SCM`
-  definitely need an explicit alias table.) *(beta feedback)*
+- **Built-in manufacturer aliases (true abbreviations / nicknames).** Map non-obvious variants that
+  normalization alone won't catch to the canonical TWDB make before fuzzy matching: e.g. `SCM` →
+  *Smith Corona*. (Spacing/hyphen variants are handled by the normalization item below, not here.) Later:
+  user-defined aliases via the settings store. *(beta feedback)*
 - **Prefer the longer / more-specific match (make AND model).** Shorter candidates win when a longer,
   more-specific one should: "Smith Corona" detected as **"Corona"**; Brother **"Deluxe 660TR"** detected
   as only **"Deluxe"**. The matcher needs to recognize the short candidate matched but keep going and
   prefer the longer, more-token-consuming candidate when one name is a subset/prefix of another. Tricky —
   a scoring tweak in both `inferMake` and `inferModel` (favor multi-token candidates / more path tokens
   consumed). *(beta feedback)*
-- **Normalize spacing variants like "deluxe" vs "de luxe". (Common — prioritize.)** A narrow edge case
-  but a *frequent* one (many models carry "Deluxe"/"De Luxe"), so worth doing robustly. Normalize on
-  **both** sides during detection — the user's folder name AND the TWDB candidate names (collapse
-  internal spaces so "de luxe" ≡ "deluxe"). (`norm` already strips non-alphanumerics, so the joined-token
-  path may partly handle it — verify and make it explicit/robust.) *(beta feedback)*
+- **Normalize spacing / hyphen / punctuation variants. (Common — prioritize.)** Same family, frequent:
+  makes — *Smith-Corona* ≡ *Smith Corona*, *Silver-Reed* ≡ *Silver Reed*, etc.; models — *de luxe* ≡
+  *deluxe*. Normalize on **both** sides during detection (the user's folder name AND the TWDB candidate
+  names) so hyphens/spaces don't block a match. Note: `norm` already strips non-alphanumerics, so the
+  joined-token path likely matches these today — **verify and make it robust** (esp. the token-level
+  path). No output inconsistency: the resolved value is always TWDB's canonical spelling. *(beta feedback)*
 - **Loose-year gaps in `suggestTwdbYear`.** Today: `1960s` → `196X` works, but a **literal `196X` / `19XX`
   in the folder name is NOT detected** (it only scans `\d{4}`), nor `60s` (2-digit decade), nor `1960's`
   (apostrophe). Consider matching `\d{3}[xX]` / `\d{2}[xX]{2}` and 2-digit decades. (`isValidTwdbYear`
