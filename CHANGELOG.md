@@ -4,6 +4,8 @@ All notable changes to FigureShift, newest first.
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-06-30
+
 - Fix: changing the library folder from the menu now reloads the review screen to show the new library instead of the previous one.
 
 ## [0.4.1] - 2026-06-30
