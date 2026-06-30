@@ -36,6 +36,23 @@ DT-leads strategy — fix in the library, both DT and FigureShift benefit.
   the old (wrong) inference. Add a per-machine action that discards the seeded fields and re-infers from
   the current folder name. (Name TBD — "Re-detect from folder name" / "Reset & re-scan".) *(beta feedback)*
 
+## Feature requests (beta)
+
+- **Photo ordering.** Let the user set the order photos appear in the TWDB gallery (drag-to-reorder, or
+  up/down). Push already uploads in `doc.photos` array order, so reordering that array sets gallery
+  order — needs reorder controls in `PhotoGrid` and order preserved in machine.yaml. *(beta feedback)*
+- **Add a new Make / Model.** Models already work (free-text datalist → `createMachine` sends a new
+  `model`); consider a clearer "add new model" affordance (an explicit button is fine). **Makes:** TWDB
+  brands are a fixed `cat_id` dropdown (admin-curated) — verify whether a brand-new make can be created
+  via the create form at all; if not, this means "request it from TWDB" rather than something the app can
+  do. *(beta feedback)*
+- **Dark mode.** Light-only today, but the theme is all CSS variables (`:root` in index.css), so add a
+  dark token set + a toggle and/or follow OS `prefers-color-scheme`. *(beta feedback)*
+- **Adopt an existing TWDB listing into FigureShift.** Import a machine already on TWDB so FS can manage/
+  update it: seed machine.twdb.yaml (galleryId, photo ids/urls/hashes) + machine.yaml from the TWDB
+  entry, matched to a local folder. User has specific ideas — revisit before designing. Leans on
+  twdb-client find/resolve + listMachinePhotos. *(beta feedback)*
+
 ## Previously deferred (pre-beta)
 
 - **Gallery overwrite-resync on push** — editor *Overwrite* on an already-pushed *gallery* photo doesn't
