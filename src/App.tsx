@@ -23,8 +23,13 @@ export function App() {
       setUsername(r.username);
       setPhase(r.ok ? 'ready' : 'login');
     });
-    // The "Open Library Folder…" menu item lets the user re-pick anytime (even from the review screen).
-    return window.figureshift.onChangeLibrary(() => onPick());
+    // Menu items (File ▸ Open Library Folder… / Log Out) drive the same renderer flows from anywhere.
+    const unsubLib = window.figureshift.onChangeLibrary(() => onPick());
+    const unsubLogout = window.figureshift.onMenuLogout(() => onLogout());
+    return () => {
+      unsubLib();
+      unsubLogout();
+    };
   }, []);
 
   function closeHelp() {

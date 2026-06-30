@@ -19,6 +19,11 @@ contextBridge.exposeInMainWorld('figureshift', {
     ipcRenderer.on('menu:changeLibrary', h);
     return () => ipcRenderer.removeListener('menu:changeLibrary', h);
   },
+  onMenuLogout: (cb: () => void) => {
+    const h = () => cb();
+    ipcRenderer.on('menu:logout', h);
+    return () => ipcRenderer.removeListener('menu:logout', h);
+  },
   brands: () => ipcRenderer.invoke('twdb:brands'),
   models: (make: string) => ipcRenderer.invoke('twdb:models', make),
   saveMachine: (absPath: string, doc: unknown) => ipcRenderer.invoke('machine:save', absPath, doc),

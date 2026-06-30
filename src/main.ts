@@ -191,19 +191,17 @@ const createWindow = () => {
 // only in development.
 function buildAppMenu(): Menu {
   const isMac = process.platform === 'darwin';
+  const send = (channel: string) => {
+    const win = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0];
+    win?.webContents.send(channel);
+  };
   const template: MenuItemConstructorOptions[] = [
     ...(isMac ? [{ role: 'appMenu' as const }] : []),
     {
       label: 'File',
       submenu: [
-        {
-          label: 'Open Library Folder…',
-          accelerator: 'CmdOrCtrl+O',
-          click: () => {
-            const win = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0];
-            win?.webContents.send('menu:changeLibrary');
-          },
-        },
+        { label: 'Open Library Folder…', accelerator: 'CmdOrCtrl+O', click: () => send('menu:changeLibrary') },
+        { label: 'Log Out', click: () => send('menu:logout') },
         { type: 'separator' },
         { role: isMac ? 'close' : 'quit' },
       ],

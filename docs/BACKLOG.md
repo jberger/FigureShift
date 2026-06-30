@@ -29,6 +29,8 @@ DT-leads strategy — fix in the library, both DT and FigureShift benefit.
   screen + **File ▸ Open Library Folder…** (Cmd/Ctrl+O) re-picks anytime (no restart).
 - **User-specified aliases.** Let users add their own make aliases (extends the built-in `MAKE_ALIASES`).
   Now has a home — add a `makeAliases` map to settings.yaml and merge it into twdb-client `inferMake`.
+- **Optional: auto-reopen the saved library on launch** (skip the start screen and scan straight into the
+  remembered folder). Today it shows the start screen with a "Reopen" button. *(user may want this later)*
 
 ## Per-machine UX
 

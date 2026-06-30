@@ -20,6 +20,7 @@ declare global {
       scan: (root: string) => Promise<ScannedMachine[]>;
       getLibraryRoot: () => Promise<string>;
       onChangeLibrary: (cb: () => void) => () => void;
+      onMenuLogout: (cb: () => void) => () => void;
       brands: () => Promise<string[]>;
       models: (make: string) => Promise<string[]>;
       saveMachine: (absPath: string, doc: MachineDoc) => Promise<{ ok: boolean }>;
