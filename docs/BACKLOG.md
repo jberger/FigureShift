@@ -21,13 +21,14 @@ DT-leads strategy — fix in the library, both DT and FigureShift benefit.
 - **2-digit decades / apostrophes** in `suggestTwdbYear` (`60s`, `1960's`) still aren't detected
   (century-ambiguous; lower priority).
 
-## App-wide settings (new infrastructure)
+## App-wide settings
 
-- **Persistent app settings store** (e.g. JSON in Electron `userData`). Enables the items below.
-- **User-specified aliases.** Let users add their own make aliases (extends the built-in table above).
-  Needs the settings store.
-- **Remember the library/base directory** across launches (auto-rescan or offer to). Needs the settings
-  store.
+- ✅ **Settings store — DONE.** Comment-preserving YAML at `userData/settings.yaml` (`src/main/settings.ts`),
+  human-editable like machine.yaml.
+- ✅ **Remember the library directory — DONE.** Saved on a successful scan; "Reopen «folder»" on the start
+  screen + **File ▸ Open Library Folder…** (Cmd/Ctrl+O) re-picks anytime (no restart).
+- **User-specified aliases.** Let users add their own make aliases (extends the built-in `MAKE_ALIASES`).
+  Now has a home — add a `makeAliases` map to settings.yaml and merge it into twdb-client `inferMake`.
 
 ## Per-machine UX
 
