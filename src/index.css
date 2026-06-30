@@ -18,17 +18,18 @@
 }
 
 :root[data-theme='dark'] {
-  --bg: #1c1a18;
-  --surface: #262320;
-  --surface-2: #302c28;
-  --border: #3a3530;
-  --text: #ece8e2;
-  --muted: #a39c93;
-  --accent: #e2564b;
-  --accent-hover: #ef6a5f;
-  --accent-soft: rgba(226, 86, 75, 0.2);
+  /* Neutral black/gray/silver (Royal Quiet De Luxe: black body, chrome trim) — red accent as the pop. */
+  --bg: #161618;
+  --surface: #1f1f22;
+  --surface-2: #2a2a2e;
+  --border: #3a3a3f;
+  --text: #eaeaec;
+  --muted: #9c9ca2;
+  --accent: #e23b41;
+  --accent-hover: #f0545a;
+  --accent-soft: rgba(226, 59, 65, 0.22);
   --success: #5fa776;
-  --success-soft: #233029;
+  --success-soft: #21302a;
   --shadow: 0 1px 3px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.4);
 }
 
@@ -276,7 +277,7 @@ label.field > span,
   line-height: 1.3;
 }
 .machine-row:hover {
-  background: rgba(0, 0, 0, 0.04);
+  background: rgba(127, 127, 127, 0.14);
 }
 .machine-row.is-selected {
   background: var(--surface);
