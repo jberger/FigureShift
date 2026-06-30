@@ -401,12 +401,16 @@ label.field > span,
   align-self: center;
   background: none;
   border: none;
-  padding: 0;
+  padding: 4px 8px;
+  margin-right: 6px;
   color: var(--muted);
   cursor: grab;
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   line-height: 1;
   touch-action: none;
+}
+.drag-handle:hover {
+  color: var(--text);
 }
 .drag-handle:active {
   cursor: grabbing;
