@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import type { ScannedMachine } from './main/scan';
 import { ReviewScreen } from './renderer/ReviewScreen';
 import { Walkthrough } from './renderer/Walkthrough';
+import { ThemeToggle } from './renderer/theme';
 
 export function App() {
   const [phase, setPhase] = useState<'loading' | 'login' | 'ready'>('loading');
@@ -66,6 +67,8 @@ export function App() {
       <button className="link-btn" onClick={() => setShowHelp(true)}>
         How it works
       </button>
+      {' · '}
+      <ThemeToggle />
     </p>
   );
 

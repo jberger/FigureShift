@@ -3,6 +3,7 @@ import type { ScannedMachine } from '../main/scan';
 import type { MachineDoc } from '../main/machineYaml';
 import { MachineList } from './MachineList';
 import { MachineEditor } from './MachineEditor';
+import { ThemeToggle } from './theme';
 
 export function ReviewScreen({ machines: initial, onHelp }: { machines: ScannedMachine[]; onHelp: () => void }) {
   const [machines, setMachines] = useState(initial);
@@ -59,6 +60,8 @@ export function ReviewScreen({ machines: initial, onHelp }: { machines: ScannedM
             <button className="link-btn" onClick={onHelp}>
               How it works
             </button>
+            {' · '}
+            <ThemeToggle />
           </p>
         </div>
       </nav>

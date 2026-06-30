@@ -31,6 +31,16 @@ export function PhotoGrid({
   const setCaption = (file: string, caption: string) =>
     onChange(photos.map((p) => (p.file === file ? { ...p, caption } : p)));
 
+  // Reorder by swapping with a neighbour. Push uploads gallery photos in this array order, so this
+  // sets the gallery sequence (for the next push; already-uploaded photos keep their TWDB order).
+  const move = (idx: number, delta: number) => {
+    const j = idx + delta;
+    if (j < 0 || j >= photos.length) return;
+    const next = photos.slice();
+    [next[idx], next[j]] = [next[j], next[idx]];
+    onChange(next);
+  };
+
   return (
     <>
       <div className="photo-controls">
@@ -48,7 +58,7 @@ export function PhotoGrid({
         className="photo-grid"
         style={{ gridTemplateColumns: `repeat(auto-fill, minmax(${size}px, 1fr))` }}
       >
-        {photos.map((p) => (
+        {photos.map((p, idx) => (
           <div key={p.file} className={`photo-card${p.role === 'skip' ? ' is-skip' : ''}`}>
             <img src={thumbUrl(absPath, p.file, refreshKey)} alt={p.file} style={{ height: Math.round(size * 0.72) }} />
             <select value={p.role} onChange={(e) => onChange(setRole(photos, p.file, e.target.value as PhotoRole))}>
@@ -59,9 +69,27 @@ export function PhotoGrid({
               ))}
             </select>
             <input placeholder="caption" value={p.caption ?? ''} onChange={(e) => setCaption(p.file, e.target.value)} />
-            <button className="btn btn-secondary btn-sm" onClick={() => onEdit(p.file)}>
-              Edit…
-            </button>
+            <div className="photo-actions">
+              <button
+                className="btn btn-secondary btn-sm"
+                disabled={idx === 0}
+                title="Move earlier"
+                onClick={() => move(idx, -1)}
+              >
+                ◀
+              </button>
+              <button
+                className="btn btn-secondary btn-sm"
+                disabled={idx === photos.length - 1}
+                title="Move later"
+                onClick={() => move(idx, 1)}
+              >
+                ▶
+              </button>
+              <button className="btn btn-secondary btn-sm" style={{ marginLeft: 'auto' }} onClick={() => onEdit(p.file)}>
+                Edit…
+              </button>
+            </div>
           </div>
         ))}
       </div>

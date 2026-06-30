@@ -41,11 +41,10 @@ DT-leads strategy — fix in the library, both DT and FigureShift benefit.
 - **Photo ordering.** Let the user set the order photos appear in the TWDB gallery (drag-to-reorder, or
   up/down). Push already uploads in `doc.photos` array order, so reordering that array sets gallery
   order — needs reorder controls in `PhotoGrid` and order preserved in machine.yaml. *(beta feedback)*
-- **Add a new Make / Model.** Models already work (free-text datalist → `createMachine` sends a new
-  `model`); consider a clearer "add new model" affordance (an explicit button is fine). **Makes:** TWDB
-  brands are a fixed `cat_id` dropdown (admin-curated) — verify whether a brand-new make can be created
-  via the create form at all; if not, this means "request it from TWDB" rather than something the app can
-  do. *(beta feedback)*
+- **Clearer "add a new Model" affordance.** Models already work (free-text datalist → `createMachine`
+  sends a new `model`); consider an explicit "add new model" button so it's obvious you can type one.
+  (New *makes* are **not** possible — confirmed TWDB's brand list is fixed even on the website — so
+  nothing to do app-side; users must pick an existing make.) *(beta feedback)*
 - **Dark mode.** Light-only today, but the theme is all CSS variables (`:root` in index.css), so add a
   dark token set + a toggle and/or follow OS `prefers-color-scheme`. *(beta feedback)*
 - **Adopt an existing TWDB listing into FigureShift.** Import a machine already on TWDB so FS can manage/
