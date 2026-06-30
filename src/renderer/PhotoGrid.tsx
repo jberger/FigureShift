@@ -21,10 +21,9 @@ import type { MachinePhoto, PhotoRole } from '../main/machineYaml';
 
 const ROLES: PhotoRole[] = ['cover', 'typeSample', 'gallery', 'skip'];
 
-// Below this thumbnail size the card is too narrow for the grip + ◀/▶ on one row, so the arrows are
-// hidden (the drag grip still reorders, including via keyboard). Edit moved to an image overlay, so
-// the row only needs to fit the grip + arrows now.
-const ARROWS_MIN_SIZE = 140;
+// The card never shrinks below the width its controls need (grip + ◀/▶); the thumbnail can still get
+// shorter via the size slider, but the card holds this floor so the buttons always fit on one row.
+const MIN_CARD = 120;
 
 function thumbUrl(absPath: string, file: string, key: number) {
   return `figimg://f/${encodeURIComponent(`${absPath}/${file}`)}?k=${key}`;
@@ -99,7 +98,9 @@ export function PhotoGrid({
     applyGalleryOrder(arrayMove(gallery, oldIndex, newIndex));
   };
 
-  const gridStyle = { gridTemplateColumns: `repeat(auto-fill, minmax(${size}px, 1fr))` };
+  const gridStyle = {
+    gridTemplateColumns: `repeat(auto-fill, minmax(${Math.max(size, MIN_CARD)}px, 1fr))`,
+  };
 
   const cover = photos.find((p) => p.role === 'cover');
   const typeSample = photos.find((p) => p.role === 'typeSample');
@@ -132,8 +133,8 @@ export function PhotoGrid({
           <button className="drag-handle" {...drag} title="Drag to reorder" aria-label="Drag to reorder">
             ⠿
           </button>
-          {order && size >= ARROWS_MIN_SIZE && (
-            <>
+          {order && (
+            <span className="photo-arrows">
               <button
                 className="btn btn-secondary btn-sm"
                 disabled={order.idx === 0}
@@ -150,7 +151,7 @@ export function PhotoGrid({
               >
                 ▶
               </button>
-            </>
+            </span>
           )}
         </div>
       )}

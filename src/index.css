@@ -394,8 +394,12 @@ label.field > span,
 .photo-actions {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 6px;
-  flex-wrap: wrap;
+}
+.photo-arrows {
+  display: flex;
+  gap: 6px;
 }
 .photo-section {
   margin-bottom: 16px;
@@ -421,8 +425,7 @@ label.field > span,
   align-self: center;
   background: none;
   border: none;
-  padding: 4px 8px;
-  margin-right: 6px;
+  padding: 4px 6px;
   color: var(--muted);
   cursor: grab;
   font-size: 1.2rem;
