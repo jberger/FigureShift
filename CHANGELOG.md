@@ -4,6 +4,8 @@ All notable changes to FigureShift, newest first.
 
 ## [Unreleased]
 
+- Fix: changing the library folder from the menu now reloads the review screen to show the new library instead of the previous one.
+
 ## [0.4.1] - 2026-06-30
 
 - Add a "No serial number" option (records "N/A") for models that never had one.

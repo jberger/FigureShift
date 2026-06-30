@@ -87,7 +87,9 @@ export function App() {
 
   let content: ReactNode;
   if (machines) {
-    content = <ReviewScreen machines={machines} onHelp={() => setShowHelp(true)} />;
+    // Key on the library root so picking a new folder remounts ReviewScreen fresh
+    // (its internal state seeds from props only on mount) instead of showing the old library.
+    content = <ReviewScreen key={savedRoot} machines={machines} onHelp={() => setShowHelp(true)} />;
   } else if (phase === 'loading') {
     content = (
       <div className="auth">
