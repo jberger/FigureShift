@@ -1,4 +1,21 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  rectSortingStrategy,
+  arrayMove,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { setRole } from '../main/photoRoles';
 import type { MachinePhoto, PhotoRole } from '../main/machineYaml';
 
@@ -6,6 +23,25 @@ const ROLES: PhotoRole[] = ['cover', 'typeSample', 'gallery', 'skip'];
 
 function thumbUrl(absPath: string, file: string, key: number) {
   return `figimg://f/${encodeURIComponent(`${absPath}/${file}`)}?k=${key}`;
+}
+
+// A gallery card wrapped for drag-to-reorder; the grip is the drag handle (keyboard-accessible).
+function SortablePhoto({ id, children }: { id: string; children: ReactNode }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : undefined,
+    zIndex: isDragging ? 1 : undefined,
+  };
+  return (
+    <div ref={setNodeRef} style={style} className="photo-card">
+      <button className="drag-handle" {...attributes} {...listeners} title="Drag to reorder" aria-label="Drag to reorder">
+        ⠿
+      </button>
+      {children}
+    </div>
+  );
 }
 
 export function PhotoGrid({
@@ -28,20 +64,36 @@ export function PhotoGrid({
     localStorage.setItem('fs-thumb', String(v));
   };
 
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
   const setCaption = (file: string, caption: string) =>
     onChange(photos.map((p) => (p.file === file ? { ...p, caption } : p)));
 
-  // Reorder a gallery photo by swapping with the previous/next *gallery* photo (cover/type-sample/skip
-  // sit in their own sections and don't affect gallery order). Push uploads gallery photos in this
-  // array order and sets the TWDB gallery order to match.
+  // Write a reordered gallery sequence back into the gallery slots of doc.photos, leaving cover/
+  // type-sample/skip photos in place. Push uploads gallery photos in this order and sets the TWDB
+  // gallery order to match.
+  const applyGalleryOrder = (newGallery: MachinePhoto[]) => {
+    let g = 0;
+    onChange(photos.map((p) => (p.role === 'gallery' ? newGallery[g++] : p)));
+  };
+
   const moveGallery = (file: string, delta: number) => {
-    const galleryIdxs = photos.map((p, i) => (p.role === 'gallery' ? i : -1)).filter((i) => i >= 0);
-    const pos = photos.findIndex((p) => p.file === file);
-    const target = galleryIdxs[galleryIdxs.indexOf(pos) + delta];
-    if (target === undefined) return;
-    const next = photos.slice();
-    [next[pos], next[target]] = [next[target], next[pos]];
-    onChange(next);
+    const oldIndex = gallery.findIndex((p) => p.file === file);
+    const newIndex = oldIndex + delta;
+    if (newIndex < 0 || newIndex >= gallery.length) return;
+    applyGalleryOrder(arrayMove(gallery, oldIndex, newIndex));
+  };
+
+  const onDragEnd = (e: DragEndEvent) => {
+    const { active, over } = e;
+    if (!over || active.id === over.id) return;
+    const oldIndex = gallery.findIndex((p) => p.file === active.id);
+    const newIndex = gallery.findIndex((p) => p.file === over.id);
+    if (oldIndex < 0 || newIndex < 0) return;
+    applyGalleryOrder(arrayMove(gallery, oldIndex, newIndex));
   };
 
   const gridStyle = { gridTemplateColumns: `repeat(auto-fill, minmax(${size}px, 1fr))` };
@@ -51,8 +103,9 @@ export function PhotoGrid({
   const gallery = photos.filter((p) => p.role === 'gallery');
   const skipped = photos.filter((p) => p.role === 'skip');
 
-  const card = (p: MachinePhoto, order?: { idx: number; total: number }) => (
-    <div key={p.file} className={`photo-card${p.role === 'skip' ? ' is-skip' : ''}`}>
+  // The img/select/caption/actions shared by plain cards and sortable gallery cards.
+  const inner = (p: MachinePhoto, order?: { idx: number; total: number }): ReactNode => (
+    <>
       <img src={thumbUrl(absPath, p.file, refreshKey)} alt={p.file} style={{ height: Math.round(size * 0.72) }} />
       <select value={p.role} onChange={(e) => onChange(setRole(photos, p.file, e.target.value as PhotoRole))}>
         {ROLES.map((r) => (
@@ -87,6 +140,12 @@ export function PhotoGrid({
           Edit…
         </button>
       </div>
+    </>
+  );
+
+  const plainCard = (p: MachinePhoto) => (
+    <div key={p.file} className={`photo-card${p.role === 'skip' ? ' is-skip' : ''}`}>
+      {inner(p)}
     </div>
   );
 
@@ -107,9 +166,9 @@ export function PhotoGrid({
       <div className="photo-section">
         <h4 className="photo-section-h">Cover &amp; type sample</h4>
         <div className="photo-grid" style={gridStyle}>
-          {cover ? card(cover) : <div className="photo-empty">No cover yet — set a photo's role to “cover”.</div>}
+          {cover ? plainCard(cover) : <div className="photo-empty">No cover yet — set a photo's role to “cover”.</div>}
           {typeSample ? (
-            card(typeSample)
+            plainCard(typeSample)
           ) : (
             <div className="photo-empty">No type sample yet — set a photo's role to “typeSample”.</div>
           )}
@@ -117,11 +176,19 @@ export function PhotoGrid({
       </div>
 
       <div className="photo-section">
-        <h4 className="photo-section-h">Gallery — order is what appears on TWDB</h4>
+        <h4 className="photo-section-h">Gallery — drag (or ◀ ▶) to order; this is the TWDB order</h4>
         {gallery.length ? (
-          <div className="photo-grid" style={gridStyle}>
-            {gallery.map((p, i) => card(p, { idx: i, total: gallery.length }))}
-          </div>
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+            <SortableContext items={gallery.map((p) => p.file)} strategy={rectSortingStrategy}>
+              <div className="photo-grid" style={gridStyle}>
+                {gallery.map((p, i) => (
+                  <SortablePhoto key={p.file} id={p.file}>
+                    {inner(p, { idx: i, total: gallery.length })}
+                  </SortablePhoto>
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
         ) : (
           <p className="hint">No gallery photos yet.</p>
         )}
@@ -131,7 +198,7 @@ export function PhotoGrid({
         <div className="photo-section">
           <h4 className="photo-section-h">Skipped — won't be uploaded</h4>
           <div className="photo-grid" style={gridStyle}>
-            {skipped.map((p) => card(p))}
+            {skipped.map((p) => plainCard(p))}
           </div>
         </div>
       )}
