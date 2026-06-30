@@ -61,8 +61,8 @@ DT-leads strategy — fix in the library, both DT and FigureShift benefit.
 - **Gallery overwrite-resync on push** — editor *Overwrite* on an already-pushed *gallery* photo doesn't
   re-upload yet (hash-diff → `updatePhoto(image)`). Save-as-new already syncs; cover/type-sample done.
 - **Clearing ALL links on update** — links reconcile doesn't handle removing every link cleanly.
-- **No-serial-model exception** — some models never had serials (the Bing); push readiness currently
-  *requires* a serial.
+- ✅ **No-serial-model — DONE.** TWDB requires a serial value, so a "No serial number" checkbox fills the
+  standard **N/A** and disables the field (was: guess None/XXXX/etc).
 - **Crisp 1024² app icon** (current FigKey2 placeholder is 479², upscaled-soft) + eventual code-signing
   (macOS Developer ID + notarization; Windows cert). Path pre-wired via `APPLE_IDENTITY`.
 - **Determinate scan progress** (counts) — currently just a spinner.
