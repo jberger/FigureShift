@@ -4,6 +4,8 @@ All notable changes to FigureShift, newest first.
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-06-30
+
 - Add a "No serial number" option (records "N/A") for models that never had one.
 - Photo-card refinements: Edit overlaid on the thumbnail, always-visible reorder arrows, and a smoother thumbnail-size slider.
 
