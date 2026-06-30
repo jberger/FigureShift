@@ -114,17 +114,28 @@ else
   fi
 
   # Bump package.json + package-lock.json to the bare version (no leading 'v'), no git tag.
-  # If already at that version (e.g. the very first release), skip the bump and tag HEAD as-is.
+  # Bump package.json (skip if already at the target, e.g. the very first release at this version).
   cur="$(node -p "require('./package.json').version")"
-  if [[ "$cur" == "${VERSION#v}" ]]; then
-    echo "==> package.json already at ${VERSION#v}; tagging current commit"
-  else
+  if [[ "$cur" != "${VERSION#v}" ]]; then
     npm version --no-git-tag-version "${VERSION#v}" >/dev/null
-    echo "==> set version: $cur -> ${VERSION#v} in package.json:"
-    git --no-pager diff -- package.json
-    git add package.json package-lock.json
-    git commit -m "Release $VERSION"
+    echo "==> set version: $cur -> ${VERSION#v}"
+  else
+    echo "==> package.json already at ${VERSION#v}"
   fi
+
+  # Stamp CHANGELOG.md: turn the [Unreleased] placeholder into this version, leaving a fresh placeholder.
+  if [[ -f CHANGELOG.md ]] && grep -q '^## \[Unreleased\]' CHANGELOG.md; then
+    awk -v ver="${VERSION#v}" -v date="$(date +%F)" '
+      !stamped && /^## \[Unreleased\]/ { print; print ""; print "## [" ver "] - " date; stamped = 1; next }
+      { print }
+    ' CHANGELOG.md >CHANGELOG.md.tmp && mv CHANGELOG.md.tmp CHANGELOG.md
+    echo "==> stamped CHANGELOG.md for ${VERSION#v}"
+  fi
+
+  git add package.json package-lock.json
+  [[ -f CHANGELOG.md ]] && git add CHANGELOG.md
+  git --no-pager diff --cached --stat
+  git diff --cached --quiet || git commit -m "Release $VERSION"
   git tag -a "$VERSION" -m "Release $VERSION"
 
   echo "==> pushing main + tag $VERSION (triggers the release build)"
