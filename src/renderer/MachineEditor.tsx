@@ -81,6 +81,7 @@ export function MachineEditor({
 
   const set = (k: keyof MachineDoc, v: string) => setDoc((d) => ({ ...d, [k]: v }));
   const yearOk = !doc.year || isValidTwdbYear(doc.year);
+  const noSerial = doc.serialNo === 'N/A'; // the standard "this model had no serial" value
   const gaps = missing(doc);
 
   const addLink = () => setDoc((d) => ({ ...d, links: [...(d.links ?? []), { name: '', url: '' }] }));
@@ -165,7 +166,19 @@ export function MachineEditor({
 
         <label className="field">
           <span>Serial</span>
-          <input value={doc.serialNo ?? ''} onChange={(e) => set('serialNo', e.target.value)} />
+          <input
+            value={doc.serialNo ?? ''}
+            onChange={(e) => set('serialNo', e.target.value)}
+            disabled={noSerial}
+          />
+        </label>
+        <label className="remember" style={{ marginTop: -6, marginBottom: 12 }}>
+          <input
+            type="checkbox"
+            checked={noSerial}
+            onChange={(e) => set('serialNo', e.target.checked ? 'N/A' : '')}
+          />{' '}
+          No serial number (this model didn't have one) — sends “N/A”
         </label>
 
         <label className="field">
