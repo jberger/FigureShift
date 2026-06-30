@@ -273,6 +273,7 @@ label.field > span,
   border: none;
   border-left: 3px solid transparent;
   background: transparent;
+  color: var(--text);
   cursor: pointer;
   line-height: 1.3;
 }
