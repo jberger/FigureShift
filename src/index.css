@@ -377,6 +377,26 @@ label.field > span,
   align-items: center;
   gap: 6px;
 }
+.photo-section {
+  margin-bottom: 16px;
+}
+.photo-section-h {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin: 0 0 6px;
+}
+.photo-empty {
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  font-size: 0.85rem;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+}
 
 .photos-h {
   margin: 4px 0 6px;
