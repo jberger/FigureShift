@@ -38,10 +38,10 @@ DT-leads strategy — fix in the library, both DT and FigureShift benefit.
 
 ## Feature requests (beta)
 
-- ✅ **Photo ordering — DONE.** ◀/▶ "move earlier/later" buttons in `PhotoGrid` swap neighbours in
-  `doc.photos`; push uploads gallery photos in that order (order preserved in machine.yaml). Sets the
-  gallery sequence for the *next* push; already-uploaded photos keep their TWDB order (a post-upload
-  reorder would need a TWDB reorder API — not available).
+- ✅ **Photo ordering — DONE (incl. on TWDB).** ◀/▶ "move earlier/later" buttons in `PhotoGrid` reorder
+  `doc.photos`; push then sets the TWDB gallery order to match via twdb-client v0.6.0 `reorderPhotos`
+  (POST `typewriter_editor_photos_ordering_ajax.php`, repeated `ids[]`), only when it differs from
+  TWDB's current order. Works for already-uploaded photos too. *(pending one live confirm on TWDB)*
 - ✅ **Dark mode — DONE.** Theme toggle (auth + review screens), persisted; defaults to OS
   `prefers-color-scheme`; dark palette via `:root[data-theme='dark']`.
 - **Clearer "add a new Model" affordance.** Models already work (free-text datalist → `createMachine`
