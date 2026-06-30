@@ -21,9 +21,10 @@ import type { MachinePhoto, PhotoRole } from '../main/machineYaml';
 
 const ROLES: PhotoRole[] = ['cover', 'typeSample', 'gallery', 'skip'];
 
-// The card never shrinks below the width its controls need (grip + ◀/▶); the thumbnail can still get
-// shorter via the size slider, but the card holds this floor so the buttons always fit on one row.
-const MIN_CARD = 120;
+// Smallest card width — enough for the grip + ◀/▶ on one row. Also the slider's minimum, so the slider
+// effectively sets the card width (fixed-width columns) rather than stretching cards to fill the row.
+const MIN_CARD = 140;
+const MAX_CARD = 340;
 
 function thumbUrl(absPath: string, file: string, key: number) {
   return `figimg://f/${encodeURIComponent(`${absPath}/${file}`)}?k=${key}`;
@@ -98,9 +99,10 @@ export function PhotoGrid({
     applyGalleryOrder(arrayMove(gallery, oldIndex, newIndex));
   };
 
-  const gridStyle = {
-    gridTemplateColumns: `repeat(auto-fill, minmax(${Math.max(size, MIN_CARD)}px, 1fr))`,
-  };
+  // The slider sets the card width directly; fixed-width columns (no 1fr stretch) keep resizing smooth
+  // and the box aspect constant, so column-count changes just adjust trailing space.
+  const eff = Math.min(Math.max(size, MIN_CARD), MAX_CARD);
+  const gridStyle = { gridTemplateColumns: `repeat(auto-fill, ${eff}px)` };
 
   const cover = photos.find((p) => p.role === 'cover');
   const typeSample = photos.find((p) => p.role === 'typeSample');
@@ -115,7 +117,7 @@ export function PhotoGrid({
   ): ReactNode => (
     <>
       <div className="photo-thumb">
-        <img src={thumbUrl(absPath, p.file, refreshKey)} alt={p.file} style={{ height: Math.round(size * 0.72) }} />
+        <img src={thumbUrl(absPath, p.file, refreshKey)} alt={p.file} style={{ height: Math.round(eff * 0.72) }} />
         <button className="photo-edit-overlay" onClick={() => onEdit(p.file)} title="Edit photo">
           Edit
         </button>
@@ -171,9 +173,9 @@ export function PhotoGrid({
         <input
           id="thumb-size"
           type="range"
-          min={110}
-          max={340}
-          value={size}
+          min={MIN_CARD}
+          max={MAX_CARD}
+          value={eff}
           onChange={(e) => onSize(Number(e.target.value))}
         />
       </div>
