@@ -18,6 +18,8 @@ declare global {
       resizeSmokeTest: () => Promise<{ ok: boolean; bytes: number; contentType: string; message?: string }>;
       pickRoot: () => Promise<string | null>;
       scan: (root: string) => Promise<ScannedMachine[]>;
+      getLibraryRoot: () => Promise<string>;
+      onChangeLibrary: (cb: () => void) => () => void;
       brands: () => Promise<string[]>;
       models: (make: string) => Promise<string[]>;
       saveMachine: (absPath: string, doc: MachineDoc) => Promise<{ ok: boolean }>;

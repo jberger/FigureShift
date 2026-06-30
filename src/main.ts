@@ -10,6 +10,7 @@ import { scanLibrary } from './main/scan';
 import { writeMachineYaml, type MachineDoc } from './main/machineYaml';
 import { pushMachine } from './main/push';
 import { editedFilename } from './main/editFiles';
+import { getLibraryRoot, setLibraryRoot } from './main/settings';
 import { writeFileSync, readdirSync, readFileSync } from 'node:fs';
 import {
   loadCredentials,
@@ -80,16 +81,24 @@ ipcMain.handle('library:pickRoot', async () => {
 });
 ipcMain.handle('library:scan', async (_event, root: string) => {
   scannedRoot = path.resolve(root);
-  if (!client) return scanLibrary(root, [], async () => []);
-  const c = client;
-  const brands = await getBrands(c);
-  const makeNames = brands.map((b) => b.name);
-  const getModels = async (make: string): Promise<string[]> => {
-    const brand = brands.find((b) => b.name === make);
-    return brand ? getCreateModels(c, brand.id) : [];
-  };
-  return scanLibrary(root, makeNames, getModels);
+  let machines;
+  if (!client) {
+    machines = await scanLibrary(root, [], async () => []);
+  } else {
+    const c = client;
+    const brands = await getBrands(c);
+    const makeNames = brands.map((b) => b.name);
+    const getModels = async (make: string): Promise<string[]> => {
+      const brand = brands.find((b) => b.name === make);
+      return brand ? getCreateModels(c, brand.id) : [];
+    };
+    machines = await scanLibrary(root, makeNames, getModels);
+  }
+  setLibraryRoot(root); // remember the folder only after a successful scan
+  return machines;
 });
+
+ipcMain.handle('settings:getLibraryRoot', () => getLibraryRoot());
 
 ipcMain.handle('twdb:brands', async () =>
   client ? [...new Set((await getBrands(client)).map((b) => b.name))] : [],
@@ -184,6 +193,21 @@ function buildAppMenu(): Menu {
   const isMac = process.platform === 'darwin';
   const template: MenuItemConstructorOptions[] = [
     ...(isMac ? [{ role: 'appMenu' as const }] : []),
+    {
+      label: 'File',
+      submenu: [
+        {
+          label: 'Open Library Folder…',
+          accelerator: 'CmdOrCtrl+O',
+          click: () => {
+            const win = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0];
+            win?.webContents.send('menu:changeLibrary');
+          },
+        },
+        { type: 'separator' },
+        { role: isMac ? 'close' : 'quit' },
+      ],
+    },
     { role: 'editMenu' },
     ...(!app.isPackaged ? [{ role: 'viewMenu' as const }] : []),
     { role: 'windowMenu' },

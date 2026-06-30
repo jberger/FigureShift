@@ -13,6 +13,12 @@ contextBridge.exposeInMainWorld('figureshift', {
   resizeSmokeTest: () => ipcRenderer.invoke('twdb:resizeSmokeTest'),
   pickRoot: () => ipcRenderer.invoke('library:pickRoot'),
   scan: (root: string) => ipcRenderer.invoke('library:scan', root),
+  getLibraryRoot: () => ipcRenderer.invoke('settings:getLibraryRoot'),
+  onChangeLibrary: (cb: () => void) => {
+    const h = () => cb();
+    ipcRenderer.on('menu:changeLibrary', h);
+    return () => ipcRenderer.removeListener('menu:changeLibrary', h);
+  },
   brands: () => ipcRenderer.invoke('twdb:brands'),
   models: (make: string) => ipcRenderer.invoke('twdb:models', make),
   saveMachine: (absPath: string, doc: unknown) => ipcRenderer.invoke('machine:save', absPath, doc),

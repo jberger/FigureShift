@@ -14,13 +14,17 @@ export function App() {
   const [scanning, setScanning] = useState(false);
   const [scanErr, setScanErr] = useState('');
   const [showHelp, setShowHelp] = useState(false);
+  const [savedRoot, setSavedRoot] = useState('');
 
   useEffect(() => {
     if (!localStorage.getItem('fs-onboarded')) setShowHelp(true);
+    window.figureshift.getLibraryRoot().then(setSavedRoot);
     window.figureshift.autoLogin().then((r) => {
       setUsername(r.username);
       setPhase(r.ok ? 'ready' : 'login');
     });
+    // The "Open Library Folder…" menu item lets the user re-pick anytime (even from the review screen).
+    return window.figureshift.onChangeLibrary(() => onPick());
   }, []);
 
   function closeHelp() {
@@ -48,18 +52,22 @@ export function App() {
     setPhase('login');
   }
 
-  async function onPick() {
-    const picked = await window.figureshift.pickRoot();
-    if (!picked) return;
+  async function scanRoot(root: string) {
     setScanning(true);
     setScanErr('');
     try {
-      setMachines(await window.figureshift.scan(picked));
+      setMachines(await window.figureshift.scan(root));
+      setSavedRoot(root);
     } catch (e) {
       setScanErr(e instanceof Error ? e.message : String(e));
     } finally {
       setScanning(false);
     }
+  }
+
+  async function onPick() {
+    const picked = await window.figureshift.pickRoot();
+    if (picked) await scanRoot(picked);
   }
 
   const helpLink = (
@@ -90,9 +98,23 @@ export function App() {
         <div className="auth-card card">
           <h1>FigureShift</h1>
           <p>Logged in{username ? ` as ${username}` : ''} ✓</p>
+          {savedRoot && (
+            <button
+              className="btn btn-primary"
+              style={{ width: '100%', marginBottom: 8 }}
+              onClick={() => scanRoot(savedRoot)}
+              disabled={scanning}
+            >
+              Reopen “{savedRoot.split(/[/\\]/).filter(Boolean).pop()}”
+            </button>
+          )}
           <div className="row">
-            <button className="btn btn-primary" onClick={onPick} disabled={scanning}>
-              Pick library folder…
+            <button
+              className={`btn ${savedRoot ? 'btn-secondary' : 'btn-primary'}`}
+              onClick={onPick}
+              disabled={scanning}
+            >
+              {savedRoot ? 'Pick a different folder…' : 'Pick library folder…'}
             </button>
             <button className="btn btn-secondary" onClick={onLogout} disabled={scanning}>
               Log out
