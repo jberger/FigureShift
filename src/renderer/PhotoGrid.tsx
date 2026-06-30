@@ -21,6 +21,10 @@ import type { MachinePhoto, PhotoRole } from '../main/machineYaml';
 
 const ROLES: PhotoRole[] = ['cover', 'typeSample', 'gallery', 'skip'];
 
+// Below this thumbnail size the card is too narrow for the grip + arrows + Edit on one row, so the
+// ◀/▶ arrows are hidden (the drag grip still reorders, including via keyboard).
+const ARROWS_MIN_SIZE = 180;
+
 function thumbUrl(absPath: string, file: string, key: number) {
   return `figimg://f/${encodeURIComponent(`${absPath}/${file}`)}?k=${key}`;
 }
@@ -123,7 +127,7 @@ export function PhotoGrid({
             ⠿
           </button>
         )}
-        {order && (
+        {order && size >= ARROWS_MIN_SIZE && (
           <>
             <button
               className="btn btn-secondary btn-sm"

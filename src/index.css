@@ -376,6 +376,7 @@ label.field > span,
   display: flex;
   align-items: center;
   gap: 6px;
+  flex-wrap: wrap;
 }
 .photo-section {
   margin-bottom: 16px;
