@@ -25,8 +25,9 @@ function thumbUrl(absPath: string, file: string, key: number) {
   return `figimg://f/${encodeURIComponent(`${absPath}/${file}`)}?k=${key}`;
 }
 
-// A gallery card wrapped for drag-to-reorder; the grip is the drag handle (keyboard-accessible).
-function SortablePhoto({ id, children }: { id: string; children: ReactNode }) {
+// A gallery card wrapped for drag-to-reorder. Hands the drag props down (render-prop) so the grip can
+// live in the actions row alongside the arrows + Edit, instead of floating at the top.
+function SortablePhoto({ id, children }: { id: string; children: (drag: Record<string, unknown>) => ReactNode }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -36,10 +37,7 @@ function SortablePhoto({ id, children }: { id: string; children: ReactNode }) {
   };
   return (
     <div ref={setNodeRef} style={style} className="photo-card">
-      <button className="drag-handle" {...attributes} {...listeners} title="Drag to reorder" aria-label="Drag to reorder">
-        ⠿
-      </button>
-      {children}
+      {children({ ...attributes, ...listeners })}
     </div>
   );
 }
@@ -104,7 +102,11 @@ export function PhotoGrid({
   const skipped = photos.filter((p) => p.role === 'skip');
 
   // The img/select/caption/actions shared by plain cards and sortable gallery cards.
-  const inner = (p: MachinePhoto, order?: { idx: number; total: number }): ReactNode => (
+  const inner = (
+    p: MachinePhoto,
+    order?: { idx: number; total: number },
+    drag?: Record<string, unknown>,
+  ): ReactNode => (
     <>
       <img src={thumbUrl(absPath, p.file, refreshKey)} alt={p.file} style={{ height: Math.round(size * 0.72) }} />
       <select value={p.role} onChange={(e) => onChange(setRole(photos, p.file, e.target.value as PhotoRole))}>
@@ -116,6 +118,11 @@ export function PhotoGrid({
       </select>
       <input placeholder="caption" value={p.caption ?? ''} onChange={(e) => setCaption(p.file, e.target.value)} />
       <div className="photo-actions">
+        {drag && (
+          <button className="drag-handle" {...drag} title="Drag to reorder" aria-label="Drag to reorder">
+            ⠿
+          </button>
+        )}
         {order && (
           <>
             <button
@@ -183,7 +190,7 @@ export function PhotoGrid({
               <div className="photo-grid" style={gridStyle}>
                 {gallery.map((p, i) => (
                   <SortablePhoto key={p.file} id={p.file}>
-                    {inner(p, { idx: i, total: gallery.length })}
+                    {(drag) => inner(p, { idx: i, total: gallery.length }, drag)}
                   </SortablePhoto>
                 ))}
               </div>
