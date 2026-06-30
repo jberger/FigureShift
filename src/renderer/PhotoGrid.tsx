@@ -21,9 +21,10 @@ import type { MachinePhoto, PhotoRole } from '../main/machineYaml';
 
 const ROLES: PhotoRole[] = ['cover', 'typeSample', 'gallery', 'skip'];
 
-// Below this thumbnail size the card is too narrow for the grip + arrows + Edit on one row, so the
-// ◀/▶ arrows are hidden (the drag grip still reorders, including via keyboard).
-const ARROWS_MIN_SIZE = 180;
+// Below this thumbnail size the card is too narrow for the grip + ◀/▶ on one row, so the arrows are
+// hidden (the drag grip still reorders, including via keyboard). Edit moved to an image overlay, so
+// the row only needs to fit the grip + arrows now.
+const ARROWS_MIN_SIZE = 140;
 
 function thumbUrl(absPath: string, file: string, key: number) {
   return `figimg://f/${encodeURIComponent(`${absPath}/${file}`)}?k=${key}`;
@@ -112,7 +113,12 @@ export function PhotoGrid({
     drag?: Record<string, unknown>,
   ): ReactNode => (
     <>
-      <img src={thumbUrl(absPath, p.file, refreshKey)} alt={p.file} style={{ height: Math.round(size * 0.72) }} />
+      <div className="photo-thumb">
+        <img src={thumbUrl(absPath, p.file, refreshKey)} alt={p.file} style={{ height: Math.round(size * 0.72) }} />
+        <button className="photo-edit-overlay" onClick={() => onEdit(p.file)} title="Edit photo">
+          Edit
+        </button>
+      </div>
       <select value={p.role} onChange={(e) => onChange(setRole(photos, p.file, e.target.value as PhotoRole))}>
         {ROLES.map((r) => (
           <option key={r} value={r}>
@@ -121,36 +127,33 @@ export function PhotoGrid({
         ))}
       </select>
       <input placeholder="caption" value={p.caption ?? ''} onChange={(e) => setCaption(p.file, e.target.value)} />
-      <div className="photo-actions">
-        {drag && (
+      {drag && (
+        <div className="photo-actions">
           <button className="drag-handle" {...drag} title="Drag to reorder" aria-label="Drag to reorder">
             ⠿
           </button>
-        )}
-        {order && size >= ARROWS_MIN_SIZE && (
-          <>
-            <button
-              className="btn btn-secondary btn-sm"
-              disabled={order.idx === 0}
-              title="Move earlier"
-              onClick={() => moveGallery(p.file, -1)}
-            >
-              ◀
-            </button>
-            <button
-              className="btn btn-secondary btn-sm"
-              disabled={order.idx === order.total - 1}
-              title="Move later"
-              onClick={() => moveGallery(p.file, 1)}
-            >
-              ▶
-            </button>
-          </>
-        )}
-        <button className="btn btn-secondary btn-sm" style={{ marginLeft: 'auto' }} onClick={() => onEdit(p.file)}>
-          Edit…
-        </button>
-      </div>
+          {order && size >= ARROWS_MIN_SIZE && (
+            <>
+              <button
+                className="btn btn-secondary btn-sm"
+                disabled={order.idx === 0}
+                title="Move earlier"
+                onClick={() => moveGallery(p.file, -1)}
+              >
+                ◀
+              </button>
+              <button
+                className="btn btn-secondary btn-sm"
+                disabled={order.idx === order.total - 1}
+                title="Move later"
+                onClick={() => moveGallery(p.file, 1)}
+              >
+                ▶
+              </button>
+            </>
+          )}
+        </div>
+      )}
     </>
   );
 
