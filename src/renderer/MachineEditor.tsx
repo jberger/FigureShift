@@ -114,7 +114,8 @@ export function MachineEditor({
     if (res.ok) {
       setPushMsg(
         `${res.created ? 'Created' : 'Updated'} on TWDB — ${res.photosUploaded ?? 0} uploaded` +
-          `, ${res.updated ?? 0} caption(s) updated, ${res.deleted ?? 0} deleted.`,
+          `, ${res.updated ?? 0} caption(s) updated, ${res.deleted ?? 0} deleted` +
+          `${res.reordered ? ', photos reordered' : ''}.`,
       );
       setPushedUrl(res.url ?? '');
       onPushed();

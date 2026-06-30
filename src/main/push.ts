@@ -19,6 +19,7 @@ export interface PushResult {
   photosUploaded: number;
   updated: number;
   deleted: number;
+  reordered: boolean;
   url: string;
 }
 
@@ -162,9 +163,13 @@ export async function pushMachine(
   const desiredIds = galleryFiles
     .map((p) => photos[p.file]?.twdbPhotoId)
     .filter((id): id is string => Boolean(id));
+  let reordered = false;
   if (desiredIds.length >= 2) {
     const currentIds = list.map((p) => p.photoId).filter((id) => desiredIds.includes(id));
-    if (currentIds.join(',') !== desiredIds.join(',')) await client.reorderPhotos(galleryId, desiredIds);
+    if (currentIds.join(',') !== desiredIds.join(',')) {
+      await client.reorderPhotos(galleryId, desiredIds);
+      reordered = true;
+    }
   }
 
   // Sync links on both create and update (setLinks replaces the gallery's links).
@@ -174,5 +179,5 @@ export async function pushMachine(
   writeTwdbYaml(absPath, { twdbUrl: url, galleryId, photos, lastPushedAt: new Date().toISOString() });
 
   const photosUploaded = (coverChanged ? 1 : 0) + (typeSampleChanged ? 1 : 0) + uploaded.length;
-  return { created, photosUploaded, updated, deleted, url };
+  return { created, photosUploaded, updated, deleted, reordered, url };
 }

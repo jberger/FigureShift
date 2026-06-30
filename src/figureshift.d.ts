@@ -29,6 +29,7 @@ declare global {
         photosUploaded?: number;
         updated?: number;
         deleted?: number;
+        reordered?: boolean;
         url?: string;
         message?: string;
       }>;
