@@ -140,9 +140,12 @@ export async function pushMachine(
 
   onProgress({ phase: 'finalize' });
 
-  // Recover id→url for newly uploaded gallery photos from steady state (one call).
+  // One listing call, reused for new-upload url recovery and the order check below.
+  const galleryFiles = doc.photos.filter((p) => p.role === 'gallery');
+  const list = uploaded.length > 0 || galleryFiles.length >= 2 ? await client.listMachinePhotos(galleryId) : [];
+
+  // Recover id→url for newly uploaded gallery photos from steady state.
   if (uploaded.length > 0) {
-    const list = await client.listMachinePhotos(galleryId);
     const urlById = new Map(list.map((p) => [p.photoId, p.url]));
     for (const u of uploaded) {
       photos[u.file] = {
@@ -152,6 +155,16 @@ export async function pushMachine(
         caption: u.caption,
       };
     }
+  }
+
+  // Set the gallery's photo order to match doc.photos, but only if it differs from TWDB's current
+  // order (avoids a needless POST — e.g. a fresh create already uploads in order).
+  const desiredIds = galleryFiles
+    .map((p) => photos[p.file]?.twdbPhotoId)
+    .filter((id): id is string => Boolean(id));
+  if (desiredIds.length >= 2) {
+    const currentIds = list.map((p) => p.photoId).filter((id) => desiredIds.includes(id));
+    if (currentIds.join(',') !== desiredIds.join(',')) await client.reorderPhotos(galleryId, desiredIds);
   }
 
   // Sync links on both create and update (setLinks replaces the gallery's links).
