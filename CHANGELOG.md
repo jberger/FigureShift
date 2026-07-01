@@ -4,6 +4,8 @@ All notable changes to FigureShift, newest first.
 
 ## [Unreleased]
 
+- "Check for new photos" now confirms with "Up to date — no new photos." when nothing changed, so the button no longer feels unresponsive.
+
 ## [0.5.0] - 2026-06-30
 
 - Pick up photos added to a machine's folder without re-importing — automatically when you open the folder, or on demand via "Check for new photos". New photos are highlighted; ones that have disappeared are flagged for removal.

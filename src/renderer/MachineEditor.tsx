@@ -72,7 +72,7 @@ export function MachineEditor({
 
   // Pick up photos added to (or removed from) the folder since the doc was loaded.
   // Merges new files into the in-memory doc so unsaved role/caption edits survive.
-  async function rescan() {
+  async function rescan(manual = false) {
     const res = await window.figureshift.rescan(machine.absPath);
     if (!res.ok) {
       setRescanMsg(res.message ?? 'Could not check the folder for new photos.');
@@ -84,7 +84,9 @@ export function MachineEditor({
       : '';
     if (res.added.length === 0) {
       setAddedFiles([]);
-      setRescanMsg(missingNote.trim());
+      // On a manual check, confirm we looked even when nothing changed — otherwise the
+      // button feels unresponsive. Stay silent on the automatic rescan (fires on every mount).
+      setRescanMsg(missingNote.trim() || (manual ? 'Up to date — no new photos.' : ''));
       return;
     }
     const newPhotos: MachinePhoto[] = res.added.map((file) => ({ file, role: 'gallery' as const }));
@@ -295,7 +297,7 @@ export function MachineEditor({
           <button className="btn btn-primary" onClick={save} disabled={saving || !yearOk}>
             {saving ? 'Saving…' : 'Save'}
           </button>
-          <button className="btn btn-secondary btn-sm" type="button" onClick={rescan}>
+          <button className="btn btn-secondary btn-sm" type="button" onClick={() => rescan(true)}>
             Check for new photos
           </button>
           {rescanMsg && <span className="note">{rescanMsg}</span>}
