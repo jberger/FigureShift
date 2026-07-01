@@ -74,7 +74,10 @@ export function MachineEditor({
   // Merges new files into the in-memory doc so unsaved role/caption edits survive.
   async function rescan() {
     const res = await window.figureshift.rescan(machine.absPath);
-    if (!res.ok) return;
+    if (!res.ok) {
+      setRescanMsg(res.message ?? 'Could not check the folder for new photos.');
+      return;
+    }
     setMissingFiles(res.missing);
     const missingNote = res.missing.length
       ? ` ${res.missing.length} photo${res.missing.length > 1 ? 's are' : ' is'} missing.`
@@ -131,6 +134,14 @@ export function MachineEditor({
     await window.figureshift.saveMachine(machine.absPath, doc);
     setSaving(false);
     onSaved(doc);
+  }
+
+  async function removeMissing(file: string) {
+    const nextDoc = { ...doc, photos: doc.photos.filter((p) => p.file !== file) };
+    setDoc(nextDoc);
+    await window.figureshift.saveMachine(machine.absPath, nextDoc);
+    onSaved(nextDoc);
+    setMissingFiles((m) => m.filter((f) => f !== file));
   }
 
   async function setReady(v: boolean) {
@@ -268,6 +279,7 @@ export function MachineEditor({
         photos={doc.photos}
         onChange={(photos) => setDoc((d) => ({ ...d, photos }))}
         onEdit={(file) => setEditing(file)}
+        onRemoveMissing={removeMissing}
         refreshKey={refreshKey}
         missing={missingFiles}
         added={addedFiles}

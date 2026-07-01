@@ -60,6 +60,7 @@ export function PhotoGrid({
   photos,
   onChange,
   onEdit,
+  onRemoveMissing,
   refreshKey,
   missing,
   added,
@@ -68,6 +69,7 @@ export function PhotoGrid({
   photos: MachinePhoto[];
   onChange: (photos: MachinePhoto[]) => void;
   onEdit: (file: string) => void;
+  onRemoveMissing: (file: string) => void;
   refreshKey: number;
   missing: string[];
   added: string[];
@@ -141,7 +143,7 @@ export function PhotoGrid({
             <button
               className="btn btn-secondary btn-sm"
               type="button"
-              onClick={() => onChange(photos.filter((x) => x.file !== p.file))}
+              onClick={() => onRemoveMissing(p.file)}
             >
               Remove
             </button>
