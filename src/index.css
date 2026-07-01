@@ -552,3 +552,39 @@ label.field > span,
   font: inherit;
   text-decoration: underline;
 }
+
+.photos-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.photo-card.is-missing {
+  opacity: 0.8;
+}
+.photo-missing {
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  color: var(--muted);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  text-align: center;
+}
+@keyframes fs-new-photo {
+  from {
+    box-shadow: 0 0 0 3px var(--accent);
+    background: var(--accent-soft);
+  }
+  to {
+    box-shadow: 0 0 0 3px transparent;
+    background: transparent;
+  }
+}
+.photo-card.is-new {
+  animation: fs-new-photo 2s ease-out;
+}
