@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { isValidTwdbYear } from '@joelberger/twdb-client/validate';
 import type { Collection } from '@joelberger/twdb-client';
-import type { MachineDoc, MachineLink } from '../main/machineYaml';
+import type { MachineDoc, MachineLink, MachinePhoto } from '../main/machineYaml';
 import type { ScannedMachine } from '../main/scan';
 import { PhotoGrid } from './PhotoGrid';
 import { PhotoEditorModal, type EditResult } from './PhotoEditorModal';
@@ -38,12 +38,18 @@ export function MachineEditor({
   const [progress, setProgress] = useState<PushProgress | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [missingFiles, setMissingFiles] = useState<string[]>([]);
+  const [addedFiles, setAddedFiles] = useState<string[]>([]);
+  const [rescanMsg, setRescanMsg] = useState('');
 
   useEffect(() => {
     setDoc(machine.machine);
     setPushMsg('');
     setPushedUrl('');
     setEditing(null);
+    setRescanMsg('');
+    setAddedFiles([]);
+    setMissingFiles([]);
   }, [machine.relPath]);
 
   async function onEdited(r: EditResult) {
@@ -63,6 +69,37 @@ export function MachineEditor({
     }
     setEditing(null);
   }
+
+  // Pick up photos added to (or removed from) the folder since the doc was loaded.
+  // Merges new files into the in-memory doc so unsaved role/caption edits survive.
+  async function rescan() {
+    const res = await window.figureshift.rescan(machine.absPath);
+    if (!res.ok) return;
+    setMissingFiles(res.missing);
+    const missingNote = res.missing.length
+      ? ` ${res.missing.length} photo${res.missing.length > 1 ? 's are' : ' is'} missing.`
+      : '';
+    if (res.added.length === 0) {
+      setAddedFiles([]);
+      setRescanMsg(missingNote.trim());
+      return;
+    }
+    const newPhotos: MachinePhoto[] = res.added.map((file) => ({ file, role: 'gallery' as const }));
+    const nextDoc = { ...doc, photos: [...doc.photos, ...newPhotos] };
+    setDoc(nextDoc);
+    await window.figureshift.saveMachine(machine.absPath, nextDoc);
+    onSaved(nextDoc);
+    setAddedFiles(res.added);
+    setRescanMsg(`Added ${res.added.length} new photo${res.added.length > 1 ? 's' : ''}.${missingNote}`);
+  }
+
+  // Runs on every mount — that includes the first tab shown at startup, since the first
+  // render is itself a mount. ReviewScreen keys MachineEditor by relPath, so switching tabs
+  // remounts and re-runs this. Do NOT add a guard that skips the initial run.
+  useEffect(() => {
+    rescan();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [machine.relPath]);
 
   useEffect(() => {
     const make = doc.make ?? '';
@@ -215,7 +252,13 @@ export function MachineEditor({
         </fieldset>
       </div>
 
-      <h3 className="photos-h">Photos</h3>
+      <div className="photos-head">
+        <h3 className="photos-h">Photos</h3>
+        <button className="btn btn-secondary btn-sm" type="button" onClick={rescan}>
+          Check for new photos
+        </button>
+      </div>
+      {rescanMsg && <p className="note">{rescanMsg}</p>}
       <p className="hint">
         Give each photo a role: one <strong>cover</strong>, one <strong>type sample</strong>, the rest{' '}
         <strong>gallery</strong>; mark anything you don't want uploaded as <strong>skip</strong>.
