@@ -265,11 +265,7 @@ export function MachineEditor({
 
       <div className="photos-head">
         <h3 className="photos-h">Photos</h3>
-        <button className="btn btn-secondary btn-sm" type="button" onClick={rescan}>
-          Check for new photos
-        </button>
       </div>
-      {rescanMsg && <p className="note">{rescanMsg}</p>}
       <p className="hint">
         Give each photo a role: one <strong>cover</strong>, one <strong>type sample</strong>, the rest{' '}
         <strong>gallery</strong>; mark anything you don't want uploaded as <strong>skip</strong>.
@@ -295,10 +291,14 @@ export function MachineEditor({
       )}
 
       <div className="push-section">
-        <div style={{ marginTop: 4 }}>
+        <div className="save-row" style={{ marginTop: 4 }}>
           <button className="btn btn-primary" onClick={save} disabled={saving || !yearOk}>
             {saving ? 'Saving…' : 'Save'}
           </button>
+          <button className="btn btn-secondary btn-sm" type="button" onClick={rescan}>
+            Check for new photos
+          </button>
+          {rescanMsg && <span className="note">{rescanMsg}</span>}
         </div>
 
         <hr className="section-divider" />

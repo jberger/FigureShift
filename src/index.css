@@ -457,6 +457,17 @@ label.field > span,
 .push-section {
   margin-top: 4px;
 }
+.save-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.save-row .note {
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin: 0;
+}
 
 /* --- photo editor modal --- */
 .modal-overlay {
