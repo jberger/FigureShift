@@ -32,7 +32,15 @@ function thumbUrl(absPath: string, file: string, key: number) {
 
 // A gallery card wrapped for drag-to-reorder. Hands the drag props down (render-prop) so the grip can
 // live in the actions row alongside the arrows + Edit, instead of floating at the top.
-function SortablePhoto({ id, children }: { id: string; children: (drag: Record<string, unknown>) => ReactNode }) {
+function SortablePhoto({
+  id,
+  className,
+  children,
+}: {
+  id: string;
+  className: string;
+  children: (drag: Record<string, unknown>) => ReactNode;
+}) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -41,7 +49,7 @@ function SortablePhoto({ id, children }: { id: string; children: (drag: Record<s
     zIndex: isDragging ? 1 : undefined,
   };
   return (
-    <div ref={setNodeRef} style={style} className="photo-card">
+    <div ref={setNodeRef} style={style} className={className}>
       {children({ ...attributes, ...listeners })}
     </div>
   );
@@ -53,12 +61,16 @@ export function PhotoGrid({
   onChange,
   onEdit,
   refreshKey,
+  missing,
+  added,
 }: {
   absPath: string;
   photos: MachinePhoto[];
   onChange: (photos: MachinePhoto[]) => void;
   onEdit: (file: string) => void;
   refreshKey: number;
+  missing: string[];
+  added: string[];
 }) {
   // Thumbnail tile size (px), persisted so it sticks across machines/sessions.
   const [size, setSize] = useState(() => Number(localStorage.getItem('fs-thumb')) || 160);
@@ -109,6 +121,12 @@ export function PhotoGrid({
   const gallery = photos.filter((p) => p.role === 'gallery');
   const skipped = photos.filter((p) => p.role === 'skip');
 
+  const missingSet = new Set(missing);
+  const addedSet = new Set(added);
+  const cardClass = (p: MachinePhoto) =>
+    `photo-card${p.role === 'skip' ? ' is-skip' : ''}` +
+    `${missingSet.has(p.file) ? ' is-missing' : ''}${addedSet.has(p.file) ? ' is-new' : ''}`;
+
   // The img/select/caption/actions shared by plain cards and sortable gallery cards.
   const inner = (
     p: MachinePhoto,
@@ -117,10 +135,29 @@ export function PhotoGrid({
   ): ReactNode => (
     <>
       <div className="photo-thumb">
-        <img src={thumbUrl(absPath, p.file, refreshKey)} alt={p.file} style={{ height: Math.round(eff * 0.72) }} />
-        <button className="photo-edit-overlay" onClick={() => onEdit(p.file)} title="Edit photo">
-          Edit
-        </button>
+        {missingSet.has(p.file) ? (
+          <div className="photo-missing" style={{ height: Math.round(eff * 0.72) }}>
+            <span>File not found</span>
+            <button
+              className="btn btn-secondary btn-sm"
+              type="button"
+              onClick={() => onChange(photos.filter((x) => x.file !== p.file))}
+            >
+              Remove
+            </button>
+          </div>
+        ) : (
+          <>
+            <img
+              src={thumbUrl(absPath, p.file, refreshKey)}
+              alt={p.file}
+              style={{ height: Math.round(eff * 0.72) }}
+            />
+            <button className="photo-edit-overlay" onClick={() => onEdit(p.file)} title="Edit photo">
+              Edit
+            </button>
+          </>
+        )}
       </div>
       <select value={p.role} onChange={(e) => onChange(setRole(photos, p.file, e.target.value as PhotoRole))}>
         {ROLES.map((r) => (
@@ -161,7 +198,7 @@ export function PhotoGrid({
   );
 
   const plainCard = (p: MachinePhoto) => (
-    <div key={p.file} className={`photo-card${p.role === 'skip' ? ' is-skip' : ''}`}>
+    <div key={p.file} className={cardClass(p)}>
       {inner(p)}
     </div>
   );
@@ -199,7 +236,7 @@ export function PhotoGrid({
             <SortableContext items={gallery.map((p) => p.file)} strategy={rectSortingStrategy}>
               <div className="photo-grid" style={gridStyle}>
                 {gallery.map((p, i) => (
-                  <SortablePhoto key={p.file} id={p.file}>
+                  <SortablePhoto key={p.file} id={p.file} className={cardClass(p)}>
                     {(drag) => inner(p, { idx: i, total: gallery.length }, drag)}
                   </SortablePhoto>
                 ))}

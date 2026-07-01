@@ -269,6 +269,8 @@ export function MachineEditor({
         onChange={(photos) => setDoc((d) => ({ ...d, photos }))}
         onEdit={(file) => setEditing(file)}
         refreshKey={refreshKey}
+        missing={missingFiles}
+        added={addedFiles}
       />
 
       {editing && (
