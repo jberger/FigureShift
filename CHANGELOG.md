@@ -4,6 +4,8 @@ All notable changes to FigureShift, newest first.
 
 ## [Unreleased]
 
+- Pick up photos added to a machine's folder without re-importing — automatically when you open the folder, or on demand via "Check for new photos". New photos are highlighted; ones that have disappeared are flagged for removal.
+
 ## [0.4.2] - 2026-06-30
 
 - Fix: changing the library folder from the menu now reloads the review screen to show the new library instead of the previous one.
