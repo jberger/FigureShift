@@ -1,7 +1,7 @@
 {
   "name": "figureshift",
   "productName": "FigureShift",
-  "version": "0.4.2",
+  "version": "0.5.0",
   "description": "Bulk-upload your typewriter collection to the Typewriter Database",
   "main": ".vite/build/main.js",
   "private": true,
