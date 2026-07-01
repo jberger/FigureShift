@@ -24,6 +24,9 @@ declare global {
       brands: () => Promise<string[]>;
       models: (make: string) => Promise<string[]>;
       saveMachine: (absPath: string, doc: MachineDoc) => Promise<{ ok: boolean }>;
+      rescan: (
+        absPath: string,
+      ) => Promise<{ ok: boolean; added: string[]; missing: string[]; message?: string }>;
       push: (
         absPath: string,
       ) => Promise<{

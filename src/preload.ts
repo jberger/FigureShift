@@ -27,6 +27,7 @@ contextBridge.exposeInMainWorld('figureshift', {
   brands: () => ipcRenderer.invoke('twdb:brands'),
   models: (make: string) => ipcRenderer.invoke('twdb:models', make),
   saveMachine: (absPath: string, doc: unknown) => ipcRenderer.invoke('machine:save', absPath, doc),
+  rescan: (absPath: string) => ipcRenderer.invoke('machine:rescan', absPath),
   push: (absPath: string) => ipcRenderer.invoke('machine:push', absPath),
   onPushProgress: (cb: (p: { phase: string; current?: number; total?: number }) => void) => {
     const h = (_e: unknown, p: { phase: string; current?: number; total?: number }) => cb(p);

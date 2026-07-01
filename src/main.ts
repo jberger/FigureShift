@@ -7,6 +7,7 @@ import { attemptLogin } from './main/twdbAuth';
 import { resizeSmokeTest } from './main/resizeSmokeTest';
 import { getBrands, getCreateModels } from './main/brands';
 import { scanLibrary } from './main/scan';
+import { reconcileMachineDir } from './main/rescan';
 import { writeMachineYaml, type MachineDoc } from './main/machineYaml';
 import { pushMachine } from './main/push';
 import { editedFilename } from './main/editFiles';
@@ -113,6 +114,18 @@ ipcMain.handle('twdb:models', async (_event, make: string) => {
 ipcMain.handle('machine:save', async (_event, absPath: string, doc: MachineDoc) => {
   writeMachineYaml(absPath, doc);
   return { ok: true };
+});
+
+ipcMain.handle('machine:rescan', (_event, absPath: string) => {
+  const abs = path.resolve(absPath);
+  const ok = scannedRoot && (abs === scannedRoot || abs.startsWith(scannedRoot + path.sep));
+  if (!ok) return { ok: false as const, added: [], missing: [], message: 'Outside the library.' };
+  try {
+    const { added, missing } = reconcileMachineDir(abs);
+    return { ok: true as const, added, missing };
+  } catch (err) {
+    return { ok: false as const, added: [], missing: [], message: err instanceof Error ? err.message : String(err) };
+  }
 });
 
 ipcMain.handle('machine:push', async (event, absPath: string) => {
